@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: wha-postgres
+    environment:
+      POSTGRES_USER: wha
+      POSTGRES_PASSWORD: wha
+      POSTGRES_DB: wehelpagents
+    ports:
+      - "5434:5432"
+    volumes:
+      - wha-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wha -d wehelpagents"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  wha-pgdata:
