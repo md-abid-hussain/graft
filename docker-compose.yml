@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: wha-postgres
+    environment:
+      POSTGRES_USER: wha
+      POSTGRES_PASSWORD: wha
+      POSTGRES_DB: wehelpagents
+    ports:
+      # Loopback only. This is a local development database — the credentials
+      # above are deliberately not secrets, so it must not be reachable from
+      # other hosts on the network.
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - wha-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wha -d wehelpagents"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  wha-pgdata:
