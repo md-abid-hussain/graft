@@ -7,7 +7,10 @@ services:
       POSTGRES_PASSWORD: wha
       POSTGRES_DB: wehelpagents
     ports:
-      - "5434:5432"
+      # Loopback only. This is a local development database — the credentials
+      # above are deliberately not secrets, so it must not be reachable from
+      # other hosts on the network.
+      - "127.0.0.1:5434:5432"
     volumes:
       - wha-pgdata:/var/lib/postgresql/data
     healthcheck:
