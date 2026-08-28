@@ -30,7 +30,21 @@ const tsvector = customType<{ data: string; driverData: string }>({
 });
 
 export type HackathonStatus = "upcoming" | "active" | "past" | "unknown";
-export type ProductRole = "main_sponsor" | "model_partner" | "community";
+/** Which shape the event page was. Decides how much structure to expect. */
+export type SourceFormat = "wemakedevs" | "luma" | "other";
+export type EventMode = "online" | "in_person" | "hybrid";
+/**
+ * Whether the product's documentation is worth indexing.
+ *
+ * Driven by one question: does a developer INTEGRATE this into a codebase? That is
+ * what Field Engineer targets and what retrieval needs to answer. A tool you install
+ * as part of the pipeline (a code-review GitHub App) or a model provider is a real
+ * sponsor whose links matter, but has no integration surface — indexing it spends the
+ * corpus on questions nobody asks.
+ *
+ * Deliberately NOT derived from whether the product is required: Qodo is mandatory for
+ * this hackathon and still has nothing to integrate.
+ */
 export type IngestPolicy = "full" | "metadata_only" | "skip";
 export type SourceKind =
   | "docs" | "rules" | "blog" | "repo" | "video" | "submission" | "announcement";
@@ -59,6 +73,20 @@ export const hackathons = pgTable("hackathons", {
   status: text("status").$type<HackathonStatus>().notNull().default("unknown"),
   sourceUrl: text("source_url").notNull(),
 
+  // Hackathon pages come in more than one shape, and the difference is layout rather
+  // than completeness. A WeMakeDevs page splits tracks, rules, judging and
+  // requirements across /schedule, /rules and /resources. A Luma page carries the same
+  // material inside one free-form "About Event" body, under markdown headings, plus
+  // richer structured metadata — venue address, attendee count, categories, and a
+  // Hosted By list that in practice names the sponsors.
+  //
+  // Recording the shape tells Scout how to extract (navigate vs parse prose) and tells
+  // the UI whether an empty Rules section means "none published" or "not yet read".
+  sourceFormat: text("source_format").$type<SourceFormat>().notNull().default("other"),
+  mode: text("mode").$type<EventMode>(),
+  location: text("location"),
+  registrationUrl: text("registration_url"),
+
   // Read whole, filtered on almost never — jsonb rather than child tables.
   prizes: jsonb("prizes").notNull().default(sql`'[]'::jsonb`),
   tracks: jsonb("tracks").notNull().default(sql`'[]'::jsonb`),
@@ -72,10 +100,17 @@ export const hackathons = pgTable("hackathons", {
 });
 
 /**
- * `role` + `ingestPolicy` are the corpus budget control. A model partner's docs can
- * be 100x a main sponsor's — OpenAI's llms-full.txt is 6.4MB / 1,520 sections against
- * TrueForge's 265KB / 76. Policy is derived from role at write time so an agent
- * cannot accidentally swamp the corpus with a product nobody is building on.
+ * A product, independent of any hackathon.
+ *
+ * Products deliberately carry NO hackathon reference. The same product appears across
+ * events — Bright Data sponsored Scrape-Verse and hosted Zero Downtime; SigNoz had its
+ * own hackathon and appears in Zero Downtime — and that persistence is the entire
+ * point of the corpus. A single `hackathon_id` here would let each new appearance
+ * overwrite the last. See `hackathonProducts`.
+ *
+ * `ingestPolicy` is the corpus budget control. OpenAI's llms-full.txt is 5.4MB across
+ * 1,520 sections against TrueForge's 265KB across 76 — roughly 21x — so an agent must
+ * not be able to swamp the index with a product nobody builds on.
  */
 export const products = pgTable(
   "products",
@@ -87,9 +122,6 @@ export const products = pgTable(
     category: text("category").notNull(),
     summary: text("summary"),
 
-    hackathonId: text("hackathon_id").references(() => hackathons.id, { onDelete: "set null" }),
-    role: text("role").$type<ProductRole>().notNull().default("main_sponsor"),
-    isRequired: boolean("is_required").notNull().default(false),
     ingestPolicy: text("ingest_policy").$type<IngestPolicy>().notNull().default("full"),
 
     homepageUrl: text("homepage_url"),
@@ -103,9 +135,37 @@ export const products = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
+  (t) => [index("products_category_idx").on(t.category)],
+);
+
+/**
+ * Which products appeared in which hackathon, and whether using them was mandatory.
+ *
+ * `isRequired` lives here rather than on the product because it is a fact about the
+ * *relationship*: a product can be required by one event and merely present at
+ * another. It replaces the old three-value `role` column — "main sponsor" and
+ * "must be used" were encoding the same thing twice.
+ */
+export const hackathonProducts = pgTable(
+  "hackathon_products",
+  {
+    hackathonId: text("hackathon_id")
+      .notNull()
+      .references(() => hackathons.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+
+    /** True when a submission must use this product to qualify. */
+    isRequired: boolean("is_required").notNull().default(false),
+    /** Anything event-specific: credits offered, track it belongs to, caveats. */
+    notes: text("notes"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
   (t) => [
-    index("products_category_idx").on(t.category),
-    index("products_hackathon_idx").on(t.hackathonId),
+    unique("hackathon_products_pk").on(t.hackathonId, t.productId),
+    index("hackathon_products_product_idx").on(t.productId),
   ],
 );
 
@@ -272,6 +332,7 @@ export const runSteps = pgTable(
 
 export type Hackathon = typeof hackathons.$inferSelect;
 export type Product = typeof products.$inferSelect;
+export type HackathonProduct = typeof hackathonProducts.$inferSelect;
 export type Source = typeof sources.$inferSelect;
 export type Finding = typeof findings.$inferSelect;
 export type Chunk = typeof chunks.$inferSelect;
