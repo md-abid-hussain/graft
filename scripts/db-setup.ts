@@ -2,9 +2,16 @@ import "dotenv/config";
 import { Pool } from "pg";
 
 /**
- * drizzle-kit cannot emit `CREATE EXTENSION`, so pgvector is enabled here.
- * Idempotent — run it before the first `db:push`, and again any time you
- * recreate the container.
+ * Enables pgvector.
+ *
+ * NOT needed for `pnpm db:migrate` — the first migration creates the extension
+ * itself, so a fresh clone works with `db:up` then `db:migrate` alone.
+ *
+ * This exists for the `db:push` path: drizzle-kit push applies DDL directly from
+ * the schema and never reads migration files, so it would hit `type "vector" does
+ * not exist` on a database where the extension was never enabled.
+ *
+ * Idempotent — safe to run any time.
  */
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 

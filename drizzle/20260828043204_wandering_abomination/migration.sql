@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS vector;--> statement-breakpoint
 CREATE TABLE "chunks" (
 	"id" bigserial PRIMARY KEY,
 	"source_id" text NOT NULL,
