@@ -11,11 +11,64 @@
  *    single biggest quality lever in a small corpus and it costs nothing.
  */
 
-const FENCE = /^\s*(```|~~~)/;
+const FENCE = /^\s*(`{3,}|~{3,})/;
 const HEADING = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
+
+/**
+ * A closing fence must be the marker ALONE — at least as many characters as the
+ * opener, then only whitespace.
+ *
+ * The naive `line.startsWith(marker)` check treats a line of fence content such as
+ * ```` ```javascript ```` as a close, which silently ends the block early and lets the
+ * headings after it be read as section boundaries. That breaks the one guarantee this
+ * chunker makes.
+ */
+function closesFence(line: string, marker: string): boolean {
+  const char = marker[0]!;
+  const trimmed = line.trim();
+  if (!trimmed.startsWith(char.repeat(marker.length))) return false;
+  return trimmed.split("").every((c) => c === char);
+}
+
+/** Track fence state for one line. Returns the new state. */
+function nextFence(line: string, fence: string | null): string | null {
+  if (fence) return closesFence(line, fence) ? null : fence;
+  const open = line.match(FENCE);
+  return open ? open[1]! : null;
+}
 
 /** Rough token estimate. A real tokenizer is not worth the dependency at this size. */
 export const estimateTokens = (text: string): number => Math.ceil(text.length / 4);
+
+/**
+ * Ceiling for a single embedding input. OpenAI rejects anything over 8192 tokens, and
+ * that failure is deterministic — retrying cannot fix it. 6000 leaves headroom for the
+ * chars/4 estimate being wrong on dense text such as minified code or CJK.
+ */
+export const HARD_MAX_TOKENS = 6000;
+
+/** Split an oversized block at line boundaries, never mid-line. */
+function hardSplit(block: string, maxTokens: number): string[] {
+  if (estimateTokens(block) <= maxTokens) return [block];
+
+  const out: string[] = [];
+  let buf: string[] = [];
+  let tokens = 0;
+
+  for (const line of block.split("\n")) {
+    const t = estimateTokens(line) + 1;
+    if (tokens + t > maxTokens && buf.length) {
+      out.push(buf.join("\n"));
+      buf = [];
+      tokens = 0;
+    }
+    buf.push(line);
+    tokens += t;
+  }
+
+  if (buf.length) out.push(buf.join("\n"));
+  return out;
+}
 
 export interface ChunkInput {
   markdown: string;
@@ -56,11 +109,9 @@ function toSections(markdown: string): Section[] {
   };
 
   for (const line of markdown.split(/\r?\n/)) {
-    const fenceMatch = line.match(FENCE);
-    if (fenceMatch) {
-      const marker = fenceMatch[1]!;
-      if (fence && line.trimStart().startsWith(fence)) fence = null;
-      else if (!fence) fence = marker;
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+    if (wasInFence || fence !== null) {
       current.lines.push(line);
       continue;
     }
@@ -97,19 +148,20 @@ function toBlocks(lines: string[]): string[] {
   };
 
   for (const line of lines) {
-    const fenceMatch = line.match(FENCE);
-    if (fenceMatch) {
-      const marker = fenceMatch[1]!;
-      if (fence && line.trimStart().startsWith(fence)) {
-        buf.push(line);
-        fence = null;
-        flush(); // a code block ends its own block
-        continue;
-      }
-      if (!fence) {
-        flush(); // a code block starts a fresh one
-        fence = marker;
-      }
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+
+    if (wasInFence && fence === null) {
+      buf.push(line);
+      flush(); // a code block ends its own block
+      continue;
+    }
+    if (!wasInFence && fence !== null) {
+      flush(); // a code block starts a fresh one
+      buf.push(line);
+      continue;
+    }
+    if (fence !== null) {
       buf.push(line);
       continue;
     }
@@ -166,18 +218,25 @@ export function chunkMarkdown(input: ChunkInput): Chunk[] {
       const blockTokens = estimateTokens(block);
 
       // A single oversized block — usually a long code sample. Emit it alone rather
-      // than cutting it in half.
+      // than mixing it with neighbours.
+      //
+      // It still has to be split if it exceeds HARD_MAX_TOKENS: the embedding API
+      // rejects any single input over 8192 tokens, and retries cannot help because the
+      // failure is deterministic. Splitting a huge block is regrettable; failing the
+      // whole ingestion because of one is worse.
       if (blockTokens > budget) {
         emit();
         buf = [];
         bufTokens = 0;
-        chunks.push({
-          content: header + block,
-          body: block,
-          headingPath,
-          ord: ord++,
-          tokenCount: estimateTokens(header + block),
-        });
+        for (const piece of hardSplit(block, HARD_MAX_TOKENS - headerTokens)) {
+          chunks.push({
+            content: header + piece,
+            body: piece,
+            headingPath,
+            ord: ord++,
+            tokenCount: estimateTokens(header + piece),
+          });
+        }
         continue;
       }
 
@@ -233,11 +292,9 @@ export function parseLlmsFull(text: string): LlmsFullDoc[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
 
-    const fenceMatch = line.match(FENCE);
-    if (fenceMatch) {
-      const marker = fenceMatch[1]!;
-      if (fence && line.trimStart().startsWith(fence)) fence = null;
-      else if (!fence) fence = marker;
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+    if (wasInFence || fence !== null) {
       if (current) buf.push(line);
       continue;
     }
@@ -300,11 +357,9 @@ export function parseByH1(text: string, baseUrl: string): LlmsFullDoc[] {
   };
 
   for (const line of lines) {
-    const fenceMatch = line.match(FENCE);
-    if (fenceMatch) {
-      const marker = fenceMatch[1]!;
-      if (fence && line.trimStart().startsWith(fence)) fence = null;
-      else if (!fence) fence = marker;
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+    if (wasInFence || fence !== null) {
       buf.push(line);
       continue;
     }
@@ -325,7 +380,24 @@ export function parseByH1(text: string, baseUrl: string): LlmsFullDoc[] {
   return docs;
 }
 
-/** Enough top-level headings that H1 splitting produces meaningful documents. */
+/**
+ * Enough real top-level headings that H1 splitting produces meaningful documents.
+ *
+ * Fence-aware, because a plain regex counts shell comments inside code blocks as
+ * headings. A single page containing five `# install the thing` lines and no actual H1
+ * would be routed to parseByH1, which correctly ignores fenced content, find zero
+ * documents, and fail the ingestion with "nothing to index".
+ */
 export function hasManyH1s(text: string): boolean {
-  return (text.match(/^#\s+\S/gm) ?? []).length >= 5;
+  let count = 0;
+  let fence: string | null = null;
+
+  for (const line of text.split(/\r?\n/)) {
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+    if (wasInFence || fence !== null) continue;
+    if (/^#\s+\S/.test(line) && ++count >= 5) return true;
+  }
+
+  return false;
 }

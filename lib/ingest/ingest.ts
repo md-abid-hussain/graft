@@ -112,7 +112,41 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
     .limit(1);
 
   if (!opts.force && existing?.contentHash === contentHash && existing.status === "indexed") {
-    log("content unchanged, skipping");
+    // Content is unchanged, but the CALLER's metadata may not be. A source first
+    // ingested manually with no product, then re-ingested by Scout with productId and
+    // hackathonId, must pick up that association — otherwise it stays unattributed and
+    // its chunks are unreachable behind a product filter forever.
+    const metadataChanged =
+      (opts.productId ?? null) !== existing.productId ||
+      (opts.hackathonId ?? null) !== existing.hackathonId ||
+      opts.kind !== existing.kind;
+
+    if (metadataChanged) {
+      log("content unchanged, but metadata differs — correcting");
+      await db.transaction(async (tx) => {
+        await tx
+          .update(schema.sources)
+          .set({
+            productId: opts.productId ?? null,
+            hackathonId: opts.hackathonId ?? null,
+            kind: opts.kind,
+            title: opts.title ?? existing.title,
+          })
+          .where(eq(schema.sources.id, sourceId));
+        // chunks carry denormalised copies for pre-filtering; they must agree.
+        await tx
+          .update(schema.chunks)
+          .set({
+            productId: opts.productId ?? null,
+            hackathonId: opts.hackathonId ?? null,
+            kind: opts.kind,
+          })
+          .where(eq(schema.chunks.sourceId, sourceId));
+      });
+    } else {
+      log("content unchanged, skipping");
+    }
+
     return {
       sourceId,
       method: (existing.discoveryMethod ?? "manual") as DiscoveryMethod,
@@ -178,6 +212,13 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
     .onConflictDoUpdate({
       target: schema.sources.id,
       set: {
+        // Metadata is refreshed too, not just content. The chunks written below carry
+        // denormalised copies of productId/hackathonId/kind, so if the source row kept
+        // stale values the two would disagree and filtered retrieval would go wrong.
+        productId: opts.productId ?? null,
+        hackathonId: opts.hackathonId ?? null,
+        kind: opts.kind,
+        title: opts.title ?? documents[0]?.title ?? null,
         contentHash,
         byteSize,
         pageCount: documents.length,
@@ -188,44 +229,56 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
       },
     });
 
-  const vectors = await embed(
-    rows.map((r) => r.content),
-    (done, total) => log(`embedded ${done}/${total}`),
-  );
-
-  // Replace rather than append: re-ingesting a changed document must not leave the
-  // old chunks behind to be retrieved alongside the new ones.
-  await db.delete(schema.chunks).where(eq(schema.chunks.sourceId, sourceId));
-
-  for (let i = 0; i < rows.length; i += INSERT_BATCH) {
-    const slice = rows.slice(i, i + INSERT_BATCH);
-    await db.insert(schema.chunks).values(
-      slice.map((row, j) => ({
-        sourceId,
-        productId: opts.productId ?? null,
-        hackathonId: opts.hackathonId ?? null,
-        kind: opts.kind,
-        url: row.url,
-        docTitle: row.docTitle,
-        headingPath: row.headingPath,
-        ord: row.ord,
-        content: row.content,
-        tokenCount: row.tokenCount,
-        embedding: vectors[i + j]!,
-      })),
+  // Everything from here is wrapped: `sources.status` IS the ingestion queue, so an
+  // uncaught embedding or insert failure would leave a row stuck on 'pending' forever
+  // and quietly corrupt the queue's meaning.
+  try {
+    const vectors = await embed(
+      rows.map((r) => r.content),
+      (done, total) => log(`embedded ${done}/${total}`),
     );
-    log(`inserted ${Math.min(i + INSERT_BATCH, rows.length)}/${rows.length}`);
-  }
 
-  await db
-    .update(schema.sources)
-    .set({
-      status: "indexed",
-      chunkCount: rows.length,
-      indexedAt: new Date(),
-      error: null,
-    })
-    .where(eq(schema.sources.id, sourceId));
+    // Delete-then-insert in ONE transaction. Previously a failure partway through the
+    // insert batches left the corpus with some chunks deleted and not replaced — worse
+    // than not re-ingesting, because retrieval silently returns less than it should.
+    await db.transaction(async (tx) => {
+      await tx.delete(schema.chunks).where(eq(schema.chunks.sourceId, sourceId));
+
+      for (let i = 0; i < rows.length; i += INSERT_BATCH) {
+        const slice = rows.slice(i, i + INSERT_BATCH);
+        await tx.insert(schema.chunks).values(
+          slice.map((row, j) => ({
+            sourceId,
+            productId: opts.productId ?? null,
+            hackathonId: opts.hackathonId ?? null,
+            kind: opts.kind,
+            url: row.url,
+            docTitle: row.docTitle,
+            headingPath: row.headingPath,
+            ord: row.ord,
+            content: row.content,
+            tokenCount: row.tokenCount,
+            embedding: vectors[i + j]!,
+          })),
+        );
+        log(`inserted ${Math.min(i + INSERT_BATCH, rows.length)}/${rows.length}`);
+      }
+
+      await tx
+        .update(schema.sources)
+        .set({
+          status: "indexed",
+          chunkCount: rows.length,
+          indexedAt: new Date(),
+          error: null,
+        })
+        .where(eq(schema.sources.id, sourceId));
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await markFailed(sourceId, opts, `embed/index failed: ${message}`);
+    throw error;
+  }
 
   return {
     sourceId,
