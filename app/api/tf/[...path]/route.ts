@@ -39,38 +39,80 @@ const STRIP_RESPONSE = new Set([
 ]);
 
 /**
- * Agent name → registry id, resolved once.
+ * Agent name → registry id.
  *
  * `@truefoundry/trueforge-ui` 0.2.4 forwards the configured agent *name* as
  * `agent_id` when it lists sessions, but the harness filters on the registry id and
  * returns nothing for a name — so the thread list is permanently empty in SingleAgent
  * mode. Rewriting it here fixes every caller at once.
+ *
+ * The registry decides which one a value is, not its shape. Ids are ULIDs, but a
+ * 26-character name is a legal name, and testing the shape would silently classify it
+ * as an id — no rewrite, and an empty thread list with nothing to explain it. Both
+ * directions are cached so an id costs a lookup rather than a fetch.
  */
-const agentIds = new Map<string, string>();
+const idByName = new Map<string, string>();
+const knownIds = new Set<string>();
 
-async function resolveAgentId(name: string): Promise<string | undefined> {
-  const cached = agentIds.get(name);
-  if (cached) return cached;
-  try {
-    const res = await fetch(`${BASE}/api/v1/agents`, { cache: "no-store" });
-    if (!res.ok) return undefined;
-    const body = (await res.json()) as { data?: { id: string; name: string }[] };
-    for (const a of body.data ?? []) agentIds.set(a.name, a.id);
-  } catch {
-    return undefined;
-  }
-  return agentIds.get(name);
+/** The one operation that needs the rewrite; every other path is forwarded untouched. */
+const SESSION_LIST_PATH = "api/v1/sessions";
+
+/** A miss refreshes at most this often, so unknown values cannot amplify into fetches. */
+const REFRESH_AFTER_MS = 10_000;
+
+let attemptedAt = 0;
+let inFlight: Promise<void> | null = null;
+
+async function loadAgents(): Promise<void> {
+  if (Date.now() - attemptedAt < REFRESH_AFTER_MS) return;
+  // Concurrent misses share one request rather than each starting their own.
+  if (inFlight) return inFlight;
+
+  // Stamped before the fetch, not after: a failure has to back off too, or an
+  // unreachable harness turns every proxied request into a retry.
+  attemptedAt = Date.now();
+
+  inFlight = (async () => {
+    try {
+      const res = await fetch(`${BASE}/api/v1/agents`, { cache: "no-store" });
+      if (!res.ok) return;
+      const body = (await res.json()) as { data?: { id: string; name: string }[] };
+      idByName.clear();
+      knownIds.clear();
+      for (const a of body.data ?? []) {
+        idByName.set(a.name, a.id);
+        knownIds.add(a.id);
+      }
+    } catch {
+      // Leave the value alone; the harness can answer for itself.
+    } finally {
+      inFlight = null;
+    }
+  })();
+
+  return inFlight;
+}
+
+/** The registry id when `value` names an agent, otherwise undefined. */
+async function agentIdFor(value: string): Promise<string | undefined> {
+  if (idByName.has(value)) return idByName.get(value);
+  if (knownIds.has(value)) return undefined;
+  await loadAgents();
+  return idByName.get(value);
 }
 
 async function proxy(request: Request, params: Promise<{ path: string[] }>) {
   const { path } = await params;
   const url = new URL(request.url);
 
-  // Ids are ULIDs; anything else in `agent_id` is a name the harness cannot match.
-  const agent = url.searchParams.get("agent_id");
-  if (agent && !/^[0-9a-z]{26}$/i.test(agent)) {
-    const id = await resolveAgentId(agent);
-    if (id) url.searchParams.set("agent_id", id);
+  // Scoped to the session list: that is the only call the SDK mis-addresses, and
+  // leaving every other path alone keeps arbitrary requests from reaching the registry.
+  if (request.method === "GET" && path.join("/") === SESSION_LIST_PATH) {
+    const agent = url.searchParams.get("agent_id");
+    if (agent) {
+      const id = await agentIdFor(agent);
+      if (id) url.searchParams.set("agent_id", id);
+    }
   }
 
   const search = url.search;
@@ -95,14 +137,12 @@ async function proxy(request: Request, params: Promise<{ path: string[] }>) {
       cache: "no-store",
     } as RequestInit);
   } catch (error) {
+    // The address and the network error stay in the server log. Echoing them would
+    // hand the harness's location to the browser, which is what this proxy exists to
+    // avoid — and the operator reading the terminal is who needs the detail anyway.
+    console.error(`[api/tf] ${request.method} ${path.join("/")} failed:`, error);
     return NextResponse.json(
-      {
-        error: {
-          message: `Could not reach TrueForge at ${BASE}: ${
-            error instanceof Error ? error.message : "unknown error"
-          }`,
-        },
-      },
+      { error: { message: "Could not reach the agent harness." } },
       { status: 502 },
     );
   }
