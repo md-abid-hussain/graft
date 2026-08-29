@@ -5,3 +5,16 @@ allowBuilds:
   unrs-resolver: true
   msw: false
   esbuild: false
+  '@openuidev/lang-core': true
+
+# Pinned to the exact set trueforge-ui is developed against, taken from its own repo:
+# core 0.2.22, store 0.2.21, tap 0.9.5, react 0.14.27. Anything newer (tap 0.9.15 in
+# particular) crashes the chat on mount with "Maximum update depth exceeded / the
+# result of getSnapshot should be cached", thrown from @assistant-ui/tap.
+#
+# trueforge-ui also lists @assistant-ui/react as both a dependency and an optional
+# peer; pnpm honours the peer and skips it, so it is installed explicitly.
+overrides:
+  '@assistant-ui/core': 0.2.22
+  '@assistant-ui/store': 0.2.21
+  '@assistant-ui/tap': 0.9.5
