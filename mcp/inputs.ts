@@ -39,8 +39,15 @@ const cleared = <T extends z.ZodTypeAny>(schema: T, empty: z.infer<T>) =>
   schema.nullish().transform((v: unknown) => (v === null ? empty : v));
 
 export const hackathonInput = z.object({
-  hackathon: slug.describe("URL slug of the hackathon, e.g. 'trueforge'"),
-  title: z.string().min(1),
+  hackathon: slug.describe(
+    "Identifier for this hackathon, slugified from its TITLE — not from the sponsor " +
+      "and not from the page URL. 'Agents of SigNoz' is 'agents-of-signoz'. A sponsor " +
+      "runs more than one event over time, so keying on their name overwrites the " +
+      "earlier one; the title is what stays unique. Keep it short: drop a leading " +
+      "'the', drop punctuation, and stop at the distinctive part — 'The Hangover Part " +
+      "AI: Where's My Context?' is 'hangover-part-ai'. Re-saving this slug updates in place.",
+  ),
+  title: z.string().min(1).describe("Display title exactly as the page prints it"),
   sourceUrl: url.describe("The hackathon page this was read from"),
   tagline: z.string().nullish(),
   description: z.string().nullish(),
@@ -78,7 +85,11 @@ export const hackathonInput = z.object({
 });
 
 export const productInput = z.object({
-  product: slug.describe("URL slug, e.g. 'trueforge'"),
+  product: slug.describe(
+    "Identifier for this product, slugified from its NAME — 'TrueForge' is " +
+      "'trueforge', 'FalkorDB' is 'falkordb'. Not the vendor's URL path and not the " +
+      "hackathon it sponsors. Re-saving this slug updates in place.",
+  ),
   name: z.string().min(1).describe("Display name, e.g. 'TrueForge'"),
   category: z
     .string()
@@ -98,7 +109,13 @@ export const productInput = z.object({
     ),
 
   // The relation, not the product. Read back as `appearances` on get_product.
-  hackathon: slug.nullish().describe("Slug of a hackathon to link this product to"),
+  hackathon: slug
+    .nullish()
+    .describe(
+      "Link this product to a hackathon. Use the slug save_hackathon returned or one " +
+        "from list_hackathons — never re-derive it, and never pass the product's own " +
+        "slug here. An unknown slug is rejected rather than linked to nothing.",
+    ),
   notes: z
     .string()
     .nullish()
@@ -110,7 +127,11 @@ export const sourceInput = z.object({
   product: slug.describe("Slug from list_products — must already be saved"),
   kind: s.sourceKind.default("docs"),
   title: z.string().nullish().describe("Overrides the title parsed from the file"),
-  hackathon: slug.nullish().describe("Also attribute this source to a hackathon, by slug"),
+  hackathon: slug
+    .nullish()
+    .describe(
+      "Also attribute this source to a hackathon, by the slug from list_hackathons.",
+    ),
   force: z.boolean().default(false).describe("Re-index even when the content hash is unchanged"),
 });
 

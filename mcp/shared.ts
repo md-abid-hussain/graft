@@ -125,6 +125,10 @@ export function mergeSocials(
 export const slug = z
   .string()
   .min(1)
+  // Capped so a title-derived slug stays a usable key and a usable URL. Titles run
+  // long ("The Hangover Part AI: Where's My Context?"); the rule for shortening one
+  // lives on the fields that mint slugs, not here.
+  .max(64, "at most 64 characters — shorten it rather than sending the whole title")
   .regex(/^[a-z0-9][a-z0-9-]*$/, "lowercase letters, digits and hyphens only");
 
 export const url = z.string().url();
