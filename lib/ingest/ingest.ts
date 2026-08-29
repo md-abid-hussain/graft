@@ -41,7 +41,7 @@ export interface IngestResult {
   byteSize: number;
   skipped: boolean;
   /** Why it was skipped, when it was. */
-  reason?: "unchanged" | "ingest_policy";
+  reason?: "unchanged";
   tookMs: number;
 }
 
@@ -58,36 +58,6 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   const started = Date.now();
   const log = opts.onProgress ?? (() => {});
   const sourceId = sourceIdFor(opts.url);
-
-  /**
-   * Corpus budget guard, enforced here rather than at the call site so the MCP tool
-   * and the CLI are both covered — an agent calling `ingest_source` must not be able
-   * to pull in a model partner's 6MB documentation set.
-   *
-   * Only `full` ingests document chunks. `metadata_only` keeps the product record and
-   * its links but indexes nothing; `skip` does neither.
-   */
-  if (opts.productId) {
-    const [product] = await db
-      .select({ policy: schema.products.ingestPolicy, name: schema.products.name })
-      .from(schema.products)
-      .where(eq(schema.products.id, opts.productId))
-      .limit(1);
-
-    if (product && product.policy !== "full") {
-      log(`ingest_policy=${product.policy} for ${product.name} — not indexing documents`);
-      return {
-        sourceId,
-        method: opts.discoveryMethod ?? "manual",
-        pageCount: 0,
-        chunkCount: 0,
-        byteSize: 0,
-        skipped: true,
-        reason: "ingest_policy",
-        tookMs: Date.now() - started,
-      };
-    }
-  }
 
   log(`fetching ${opts.url}`);
   const res = await fetch(opts.url, {

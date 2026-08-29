@@ -1,0 +1,1 @@
+ALTER TABLE "products" DROP COLUMN "ingest_policy";

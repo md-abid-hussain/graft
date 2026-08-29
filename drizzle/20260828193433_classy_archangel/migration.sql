@@ -1,0 +1,1 @@
+ALTER TABLE "products" RENAME COLUMN "llms_txt_url" TO "llms_full_url";

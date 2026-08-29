@@ -2,7 +2,7 @@ import "dotenv/config";
 import { parseArgs } from "node:util";
 import { db, pool, schema } from "../lib/db/connection";
 import { ingestSource } from "../lib/ingest/ingest";
-import type { IngestPolicy, SourceKind } from "../lib/db/schema";
+import type { SourceKind } from "../lib/db/schema";
 
 /**
  * Manual ingestion, for building the corpus while Scout's instructions are still
@@ -27,7 +27,6 @@ const { values } = parseArgs({
     name: { type: "string" },
     category: { type: "string", default: "other" },
     company: { type: "string" },
-    policy: { type: "string", default: "full" },
     kind: { type: "string", default: "docs" },
     force: { type: "boolean", default: false },
   },
@@ -38,12 +37,10 @@ if (!values.url) {
   process.exit(1);
 }
 
-const ingestPolicy = values.policy as IngestPolicy;
-
 try {
   if (values.product) {
     // Minimal upsert so the FK resolves. Scout fills in the rest properly later.
-    // onConflictDoNothing: an existing product's stored policy wins over the CLI flag.
+    // onConflictDoNothing: an existing product's stored record wins over CLI flags.
     await db
       .insert(schema.products)
       .values({
@@ -52,7 +49,6 @@ try {
         name: values.name ?? values.product,
         company: values.company ?? null,
         category: values.category!,
-        ingestPolicy,
       })
       .onConflictDoNothing();
   }
