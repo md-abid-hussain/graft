@@ -5,13 +5,13 @@ import { DOC_AGENT_NAME } from "@/lib/trueforge/client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Ask the docs · WeHelpAgents" };
+export const metadata = { title: "Ask the docs" };
 
 /**
  * Chat with the ingested docs.
  *
  * A dedicated chat surface, so this uses the SDK's own `sidebar` layout full-page
- * rather than the compact split Research needs — there is no second half here, the
+ * rather than the compact split the teaching view needs — there is no second half
  * answers cite their sources themselves.
  */
 export default function DocsChatPage() {
@@ -33,7 +33,7 @@ export default function DocsChatPage() {
           href="/ui/run"
           className="ml-auto text-xs text-muted-foreground hover:text-foreground"
         >
-          Research
+          Teach it
         </Link>
       </header>
 

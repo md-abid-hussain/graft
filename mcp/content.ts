@@ -13,7 +13,7 @@
  * product name, why llms.txt is not llms-full.txt.
  */
 export const GUIDE = `
-# WeHelpAgents
+# Graft
 
 Sponsor products from WeMakeDevs hackathons, researched once and stored as records.
 Ask for what you need instead of reading documentation sites.

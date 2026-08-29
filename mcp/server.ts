@@ -18,7 +18,7 @@ import { registerTools } from "./tools";
  * different contract — a factory that RETURNS a server, wrapped in an object with a
  * `.fetch` method. They are not interchangeable.
  */
-export const SERVER_NAME = "wehelpagents-mcp";
+export const SERVER_NAME = "graft-mcp";
 export const SERVER_VERSION = "0.1.0";
 
 export const handler = createMcpHandler(

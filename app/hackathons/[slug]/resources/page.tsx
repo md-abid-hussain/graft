@@ -21,7 +21,7 @@ export default async function ResourcesPage({
   return (
     <div>
       {h.sponsors.length > 0 ? (
-        <Section title="Sponsor products" count={h.sponsors.length}>
+        <Section title="Sponsors" count={h.sponsors.length}>
           <ul className="space-y-3">
             {h.sponsors.map((s) => (
               <li key={s.slug} className="rounded-xl border bg-card p-4">

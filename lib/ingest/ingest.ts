@@ -119,7 +119,7 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
 
   log(`fetching ${opts.url}`);
   const res = await fetch(opts.url, {
-    headers: { "user-agent": "WeHelpAgents/0.1 (+https://github.com/md-abid-hussain/we-help-agents)" },
+    headers: { "user-agent": "Graft/0.1 (+https://github.com/md-abid-hussain/we-help-agents)" },
     signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) {

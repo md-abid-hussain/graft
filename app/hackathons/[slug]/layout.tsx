@@ -10,6 +10,17 @@ import { SubNav } from "./sub-nav";
 
 export const dynamic = "force-dynamic";
 
+/** The tab should name the hackathon being read, not just the section. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const h = await getHackathon(slug);
+  return h ? { title: h.title, description: h.tagline ?? undefined } : { title: "Not found" };
+}
+
 const STATUS_STYLE: Record<string, string> = {
   active: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400",
   upcoming: "bg-primary/12 text-primary",

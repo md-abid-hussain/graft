@@ -80,5 +80,5 @@ export const CHAT_TOKENS: NonNullable<Theme["tokens"]> = {
  * `brand.mode` ("icon-title" / "icon-only" / "logo") that this version does not have.
  */
 export const CHAT_BRAND: NonNullable<Theme["brand"]> = {
-  name: "WeHelpAgents",
+  name: "Graft",
 };

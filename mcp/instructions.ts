@@ -10,7 +10,7 @@
  * an agent reads when it needs the detail.
  */
 export const INSTRUCTIONS = `
-WeHelpAgents — documentation and hackathon knowledge for WeMakeDevs sponsor
+Graft — documentation and hackathon knowledge for WeMakeDevs sponsor
 products, researched once and stored as structured records so you never read a
 documentation site to answer a question about one.
 
