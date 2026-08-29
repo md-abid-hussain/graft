@@ -1,13 +1,11 @@
 import { sql } from "drizzle-orm";
 import {
   bigserial,
-  boolean,
   customType,
   index,
   integer,
   jsonb,
   pgTable,
-  real,
   text,
   timestamp,
   unique,
@@ -17,11 +15,13 @@ import { vector } from "drizzle-orm/pg-core";
 /**
  * Schema notes
  *
- * - Metadata tables (hackathons, products, sources, findings) exist to FILTER and
- *   CITE. Only `chunks.content` is ever embedded.
- * - Status/kind/role columns are `text` with a TS union via `$type<>()` rather than
+ * - Metadata tables (hackathons, products, sources) exist to FILTER and CITE. Only
+ *   `chunks.content` is ever embedded.
+ * - Status/kind columns are `text` with a TS union via `$type<>()` rather than
  *   pgEnum. Enum changes then cost nothing at the database level, which matters when
- *   the agent turns out to need a category nobody anticipated.
+ *   research turns up a category nobody anticipated.
+ * - Run history is deliberately absent. TrueForge owns sessions and turns; a `runs`
+ *   table here would be a worse copy of something the harness already persists.
  */
 
 // Postgres has no drizzle-native tsvector type.
@@ -30,32 +30,51 @@ const tsvector = customType<{ data: string; driverData: string }>({
 });
 
 export type HackathonStatus = "upcoming" | "active" | "past" | "unknown";
-/** Which shape the event page was. Decides how much structure to expect. */
-export type SourceFormat = "wemakedevs" | "luma" | "other";
 export type EventMode = "online" | "in_person" | "hybrid";
-/**
- * Whether the product's documentation is worth indexing.
- *
- * Driven by one question: does a developer INTEGRATE this into a codebase? That is
- * what Field Engineer targets and what retrieval needs to answer. A tool you install
- * as part of the pipeline (a code-review GitHub App) or a model provider is a real
- * sponsor whose links matter, but has no integration surface — indexing it spends the
- * corpus on questions nobody asks.
- *
- * Deliberately NOT derived from whether the product is required: Qodo is mandatory for
- * this hackathon and still has nothing to integrate.
- */
-export type IngestPolicy = "full" | "metadata_only" | "skip";
-export type SourceKind =
-  | "docs" | "rules" | "blog" | "repo" | "video" | "submission" | "announcement";
+
+export type SourceKind = "docs" | "rules" | "blog" | "repo" | "announcement";
 export type SourceStatus = "pending" | "indexed" | "failed" | "stale" | "skipped";
 export type DiscoveryMethod = "llms-full" | "llms" | "sitemap" | "crawl" | "manual";
-export type FindingKind = "repo" | "blog" | "video" | "submission" | "docs" | "social";
-export type FindingVerdict =
-  | "canonical" | "relevant" | "winner" | "low-relevance" | "reference-only" | "failed";
-export type RunPhase =
-  | "research" | "inspect" | "provision" | "implement" | "verify" | "approval" | "deliver";
-export type StepStatus = "ok" | "recovered" | "waiting" | "failed";
+
+/**
+ * The three platforms that actually carry product news.
+ *
+ * All optional, and a product may have none — plenty of good tools have no X account
+ * and no YouTube channel, and recording that absence honestly is more useful than
+ * inventing a plausible handle.
+ */
+export interface ProductSocials {
+  x?: string;
+  linkedin?: string;
+  youtube?: string;
+}
+
+/**
+ * A hackathon page is mostly the same shape repeated: a heading and a paragraph.
+ * The challenge framing, the project ideas, the best-practice rules and the judging
+ * criteria are all that, so they share one type rather than four near-identical ones.
+ */
+export interface TitledItem {
+  title: string;
+  description: string;
+}
+
+/**
+ * One prize category — judged tracks and open prizes alike.
+ *
+ * There is no separate `prizes` list. A hackathon page presents the two as different
+ * sections, but they are the same record: "Best UI, an iPad, judged on X" and "Best
+ * blog post, a keyboard, open to everyone" differ only in who can enter. Keeping both
+ * meant every judged track appeared twice, in two shapes.
+ */
+export interface Track {
+  name: string;
+  // `| null` is not decoration. A caller clears a field by sending null, and the
+  // write tool stores what it is given, so the column genuinely holds nulls. Typing
+  // these as `string | undefined` made the column lie about its own contents.
+  prize?: string | null;
+  criteria?: string | null;
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -65,7 +84,6 @@ export const hackathons = pgTable("hackathons", {
   title: text("title").notNull(),
   tagline: text("tagline"),
   description: text("description"),
-  host: text("host").default("WeMakeDevs"),
 
   startsAt: timestamp("starts_at", { withTimezone: true }),
   endsAt: timestamp("ends_at", { withTimezone: true }),
@@ -73,26 +91,38 @@ export const hackathons = pgTable("hackathons", {
   status: text("status").$type<HackathonStatus>().notNull().default("unknown"),
   sourceUrl: text("source_url").notNull(),
 
-  // Hackathon pages come in more than one shape, and the difference is layout rather
-  // than completeness. A WeMakeDevs page splits tracks, rules, judging and
-  // requirements across /schedule, /rules and /resources. A Luma page carries the same
-  // material inside one free-form "About Event" body, under markdown headings, plus
-  // richer structured metadata — venue address, attendee count, categories, and a
-  // Hosted By list that in practice names the sponsors.
-  //
-  // Recording the shape tells Scout how to extract (navigate vs parse prose) and tells
-  // the UI whether an empty Rules section means "none published" or "not yet read".
-  sourceFormat: text("source_format").$type<SourceFormat>().notNull().default("other"),
   mode: text("mode").$type<EventMode>(),
   location: text("location"),
   registrationUrl: text("registration_url"),
 
-  // Read whole, filtered on almost never — jsonb rather than child tables.
-  prizes: jsonb("prizes").notNull().default(sql`'[]'::jsonb`),
-  tracks: jsonb("tracks").notNull().default(sql`'[]'::jsonb`),
-  rules: jsonb("rules").notNull().default(sql`'[]'::jsonb`),
-  judging: jsonb("judging").notNull().default(sql`'[]'::jsonb`),
-  requirements: jsonb("requirements").notNull().default(sql`'[]'::jsonb`),
+  // Read whole, filtered on almost never — jsonb rather than child tables. Typed via
+  // $type<>() so the MCP contract and the column agree without a cast at every read.
+  //
+  // Each maps to one section of the event page. An empty array is a real answer: it
+  // means the page has no such section, as against nobody having looked yet, which is
+  // what `fetchedAt` being null says.
+
+  /** "The challenge" — what makes this problem worth an agent at all. */
+  challenge: jsonb("challenge").$type<TitledItem[]>().notNull().default(sql`'[]'::jsonb`),
+  /** Every prize category, judged track and open prize alike. */
+  tracks: jsonb("tracks").$type<Track[]>().notNull().default(sql`'[]'::jsonb`),
+  judging: jsonb("judging").$type<TitledItem[]>().notNull().default(sql`'[]'::jsonb`),
+  /** "Project ideas" — worked examples of jobs worth handing to an agent. */
+  projectIdeas: jsonb("project_ideas")
+    .$type<TitledItem[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  /** "Best practices" — how the organisers say to spend the time. */
+  bestPractices: jsonb("best_practices")
+    .$type<TitledItem[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+
+  // Last, matching the page: rules and the submission checklist live on their own
+  // subpage rather than the overview.
+  rules: jsonb("rules").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  /** "What every submission needs" — the checklist a project is disqualified against. */
+  requirements: jsonb("requirements").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
 
   fetchedAt: timestamp("fetched_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -107,10 +137,6 @@ export const hackathons = pgTable("hackathons", {
  * own hackathon and appears in Zero Downtime — and that persistence is the entire
  * point of the corpus. A single `hackathon_id` here would let each new appearance
  * overwrite the last. See `hackathonProducts`.
- *
- * `ingestPolicy` is the corpus budget control. OpenAI's llms-full.txt is 5.4MB across
- * 1,520 sections against TrueForge's 265KB across 76 — roughly 21x — so an agent must
- * not be able to swamp the index with a product nobody builds on.
  */
 export const products = pgTable(
   "products",
@@ -119,18 +145,28 @@ export const products = pgTable(
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
     company: text("company"),
+
+    /** Free text. "observability", "graph database", whatever actually fits. */
     category: text("category").notNull(),
     summary: text("summary"),
 
-    ingestPolicy: text("ingest_policy").$type<IngestPolicy>().notNull().default("full"),
-
     homepageUrl: text("homepage_url"),
     docsUrl: text("docs_url"),
-    llmsTxtUrl: text("llms_txt_url"),
+    /**
+     * llms-full.txt only — the file that concatenates the whole documentation set.
+     *
+     * NOT llms.txt, which is an index of links and carries no documentation body.
+     * Ingesting one produces a handful of chunks that are all just link lists, which
+     * retrieve confidently and answer nothing.
+     */
+    llmsFullUrl: text("llms_full_url"),
     sitemapUrl: text("sitemap_url"),
     githubUrl: text("github_url"),
     blogUrl: text("blog_url"),
-    socials: jsonb("socials").notNull().default(sql`'{}'::jsonb`),
+    socials: jsonb("socials")
+      .$type<ProductSocials>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -139,12 +175,10 @@ export const products = pgTable(
 );
 
 /**
- * Which products appeared in which hackathon, and whether using them was mandatory.
+ * Which products appeared in which hackathon.
  *
- * `isRequired` lives here rather than on the product because it is a fact about the
- * *relationship*: a product can be required by one event and merely present at
- * another. It replaces the old three-value `role` column — "main sponsor" and
- * "must be used" were encoding the same thing twice.
+ * The relation is what makes the corpus cross-event: it answers "what did this event
+ * run on" without letting a second appearance overwrite the first.
  */
 export const hackathonProducts = pgTable(
   "hackathon_products",
@@ -156,8 +190,6 @@ export const hackathonProducts = pgTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
 
-    /** True when a submission must use this product to qualify. */
-    isRequired: boolean("is_required").notNull().default(false),
     /** Anything event-specific: credits offered, track it belongs to, caveats. */
     notes: text("notes"),
 
@@ -181,7 +213,9 @@ export const sources = pgTable(
   {
     id: text("id").primaryKey(),
     productId: text("product_id").references(() => products.id, { onDelete: "cascade" }),
-    hackathonId: text("hackathon_id").references(() => hackathons.id, { onDelete: "cascade" }),
+    hackathonId: text("hackathon_id").references(() => hackathons.id, {
+      onDelete: "cascade",
+    }),
 
     url: text("url").notNull().unique(),
     title: text("title"),
@@ -204,46 +238,6 @@ export const sources = pgTable(
   (t) => [
     index("sources_status_idx").on(t.status),
     index("sources_product_idx").on(t.productId),
-  ],
-);
-
-/**
- * What the agent discovered AND judged.
- *
- * `evidence` is the differentiator — judgement, not retrieval. The verification
- * columns are what make "verified" true rather than asserted: record_finding
- * HEAD-checks the URL before writing, so a plausible-but-wrong link is marked
- * rather than silently trusted.
- */
-export const findings = pgTable(
-  "findings",
-  {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    hackathonId: text("hackathon_id").references(() => hackathons.id, { onDelete: "cascade" }),
-    productId: text("product_id").references(() => products.id, { onDelete: "cascade" }),
-
-    kind: text("kind").$type<FindingKind>().notNull(),
-    title: text("title"),
-    url: text("url").notNull(),
-    relevance: real("relevance"),
-    verdict: text("verdict").$type<FindingVerdict>(),
-    evidence: text("evidence"),
-
-    foundBy: text("found_by"),
-    sourcePage: text("source_page"),
-    verified: boolean("verified").notNull().default(false),
-    httpStatus: integer("http_status"),
-    verifiedAt: timestamp("verified_at", { withTimezone: true }),
-
-    ingested: boolean("ingested").notNull().default(false),
-    sourceId: text("source_id").references(() => sources.id, { onDelete: "set null" }),
-
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    unique("findings_url_uniq").on(t.hackathonId, t.url),
-    index("findings_hackathon_idx").on(t.hackathonId),
-    index("findings_relevance_idx").on(t.relevance),
   ],
 );
 
@@ -293,48 +287,8 @@ export const chunks = pgTable(
   ],
 );
 
-// ── Run history ─────────────────────────────────────────────────────────────
-// Written by the record_step MCP tool. Context compaction is lossy in the agent's
-// working memory; this table is what survives, and it feeds the UI timeline.
-
-export const runs = pgTable("runs", {
-  id: text("id").primaryKey(),
-  sessionId: text("session_id").notNull(),
-  kind: text("kind").$type<"research" | "integration">().notNull(),
-  agentName: text("agent_name").notNull(),
-  input: jsonb("input").notNull().default(sql`'{}'::jsonb`),
-  status: text("status")
-    .$type<"running" | "awaiting_approval" | "done" | "failed">()
-    .notNull()
-    .default("running"),
-  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-  finishedAt: timestamp("finished_at", { withTimezone: true }),
-});
-
-export const runSteps = pgTable(
-  "run_steps",
-  {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    sessionId: text("session_id").notNull(),
-    seq: integer("seq").notNull(),
-    phase: text("phase").$type<RunPhase>().notNull(),
-    label: text("label").notNull(),
-    status: text("status").$type<StepStatus>().notNull(),
-    detail: text("detail"),
-    citations: jsonb("citations").notNull().default(sql`'[]'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    unique("run_steps_seq_uniq").on(t.sessionId, t.seq),
-    index("run_steps_session_idx").on(t.sessionId, t.seq),
-  ],
-);
-
 export type Hackathon = typeof hackathons.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type HackathonProduct = typeof hackathonProducts.$inferSelect;
 export type Source = typeof sources.$inferSelect;
-export type Finding = typeof findings.$inferSelect;
 export type Chunk = typeof chunks.$inferSelect;
-export type Run = typeof runs.$inferSelect;
-export type RunStep = typeof runSteps.$inferSelect;
