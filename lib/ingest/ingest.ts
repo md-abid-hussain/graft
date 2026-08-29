@@ -54,6 +54,64 @@ const hashOf = (text: string) =>
 /** Postgres caps parameters per statement; chunk rows are wide, so insert in slices. */
 const INSERT_BATCH = 200;
 
+/**
+ * Ceiling on a single fetched document set.
+ *
+ * 32MB is generous — the largest llms-full.txt seen in practice is OpenAI's at
+ * 5.4MB, against TrueForge's 265KB — and the point is not to be tight. It is that
+ * without a limit there is none: `res.text()` buffers whatever arrives, then every
+ * chunk of it goes to the embedding API. That is memory and money spent before
+ * anything notices, and a timeout does not bound either, because a fast server
+ * sending gigabytes never trips it.
+ *
+ * Not a security control. An authorised caller with a genuinely huge URL hits this
+ * exactly as an unauthorised one would, which is the case that actually matters:
+ * the agent cannot know a file's size before fetching it, but the server can.
+ */
+const MAX_SOURCE_BYTES = 32 * 1024 * 1024;
+
+/**
+ * Read the body, refusing anything past the ceiling.
+ *
+ * `content-length` is checked first because it costs nothing when honest, but it is
+ * advisory — absent on chunked responses and trivially wrong on a hostile one — so
+ * the stream is counted as it arrives regardless.
+ */
+async function readCapped(
+  res: Response,
+  url: string,
+  sourceId: string,
+  opts: IngestOptions,
+  log: (message: string) => void,
+): Promise<string> {
+  const refuse = async (bytes: string) => {
+    const reason = `source exceeds ${MAX_SOURCE_BYTES} bytes (${bytes})`;
+    await markFailed(sourceId, opts, reason);
+    throw new Error(`${reason} for ${url}`);
+  };
+
+  const declared = Number(res.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_SOURCE_BYTES) {
+    await refuse(`content-length ${declared}`);
+  }
+
+  if (!res.body) return res.text();
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+    total += chunk.byteLength;
+    if (total > MAX_SOURCE_BYTES) {
+      await res.body.cancel().catch(() => {});
+      await refuse(`stopped at ${total}`);
+    }
+    chunks.push(chunk);
+  }
+
+  log(`fetched ${total} bytes`);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   const started = Date.now();
   const log = opts.onProgress ?? (() => {});
@@ -69,7 +127,7 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
     throw new Error(`fetch failed: HTTP ${res.status} for ${opts.url}`);
   }
 
-  const text = await res.text();
+  const text = await readCapped(res, opts.url, sourceId, opts, log);
   const byteSize = Buffer.byteLength(text, "utf8");
   const contentHash = hashOf(text);
 
