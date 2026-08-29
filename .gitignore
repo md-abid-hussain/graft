@@ -38,3 +38,6 @@ docs-to-ignore/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Editor
+.vscode/

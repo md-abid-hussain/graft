@@ -29,6 +29,10 @@
     --chart-4: oklch(0.367 0.016 35.7);
     --chart-5: oklch(0.268 0.011 36.5);
     --radius: 0.875rem;
+    /* The chat SDK names two of its own tokens --border and --radius, so pointing
+       those at ours would be self-referential and resolve to nothing. These aliases
+       give it a different name to read the same value from. */
+    --app-radius: 0.875rem;
     --sidebar: oklch(0.986 0.002 67.8);
     --sidebar-foreground: oklch(0.147 0.004 49.3);
     --sidebar-primary: oklch(0.666 0.179 58.318);
