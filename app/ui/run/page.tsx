@@ -5,7 +5,7 @@ import { AGENT_NAME } from "@/lib/trueforge/client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Research · WeHelpAgents" };
+export const metadata = { title: "Teach" };
 
 /**
  * `h-dvh` with `min-h-0` down the tree is load-bearing: the UI SDK fills its parent
@@ -23,7 +23,7 @@ export default function UiRunPage() {
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="text-sm font-medium">Research</h1>
+        <h1 className="text-sm font-medium">Teach Graft a hackathon</h1>
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
           {AGENT_NAME}
         </span>

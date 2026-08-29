@@ -1,8 +1,19 @@
+import type { Metadata } from "next"
 import { Geist_Mono, DM_Sans, Noto_Serif } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
+
+/** `template` means pages set only their own name — the brand is owned here. */
+export const metadata: Metadata = {
+  title: {
+    default: "Graft — an agent that learns your stack and builds with it",
+    template: "%s · Graft",
+  },
+  description:
+    "Learns with you at one hackathon. Builds with you at the next. Graft reads each stack from its own documentation, remembers it, and wires it into your repository behind a pull request you approve.",
+}
 
 const notoSerifHeading = Noto_Serif({
   subsets: ["latin"],

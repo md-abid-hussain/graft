@@ -61,16 +61,16 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
 
   if (!sessionId) {
     return (
-      <Placeholder icon={<MessageSquare className="size-5" />} title="No run open">
-        Start a chat and give the agent a hackathon URL. What it stores will appear here.
+      <Placeholder icon={<MessageSquare className="size-5" />} title="Nothing open">
+        Start a chat and give the agent a hackathon URL. What it learns will appear here.
       </Placeholder>
     );
   }
 
   if (!data) {
     return (
-      <Placeholder icon={<Loader2 className="size-5 animate-spin" />} title="Reading the run">
-        Checking what this session has stored.
+      <Placeholder icon={<Loader2 className="size-5 animate-spin" />} title="Catching up">
+        Checking what this session has learned.
       </Placeholder>
     );
   }
@@ -80,8 +80,8 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
   // looking for a gate that is not there.
   if (data.dbDown) {
     return (
-      <Placeholder icon={<DatabaseZap className="size-5" />} title="Corpus unreachable">
-        Postgres is not responding, so what this run stored cannot be read. The run
+      <Placeholder icon={<DatabaseZap className="size-5" />} title="Index unreachable">
+        Postgres is not responding, so what this run learned cannot be read. The run
         itself is unaffected — start it with <Mono>pnpm db:up</Mono>.
       </Placeholder>
     );
@@ -95,11 +95,11 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
       >
         {data.slug ? (
           <>
-            The agent drafted <Mono>{data.slug}</Mono> but it is not in the corpus yet.
+            The agent drafted <Mono>{data.slug}</Mono> but it is not in the index yet.
             Approve <Mono>save_hackathon</Mono> in the chat and it appears here.
           </>
         ) : (
-          <>The preview appears once the agent stores the hackathon.</>
+          <>This fills in as soon as the agent has learned the hackathon.</>
         )}
       </Placeholder>
     );

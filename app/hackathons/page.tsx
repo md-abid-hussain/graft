@@ -4,7 +4,7 @@ import { listHackathons, type HackathonCard as Card } from "@/lib/hackathons";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Hackathons · WeHelpAgents" };
+export const metadata = { title: "Hackathons" };
 
 export default async function HackathonsPage() {
   let items: Card[] = [];
@@ -22,8 +22,8 @@ export default async function HackathonsPage() {
         <header className="max-w-2xl">
           <h1 className="font-heading text-3xl tracking-tight text-balance">Hackathons</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Researched once and stored as structured records — the same rows the MCP server
-            hands to any agent you point at it.
+            Every stack Graft has learned, kept from the hackathon where it met it —
+            and still here the next time you need one of them.
           </p>
         </header>
 
@@ -33,7 +33,7 @@ export default async function HackathonsPage() {
           </Empty>
         ) : items.length === 0 ? (
           <Empty>
-            Nothing stored yet. Open <Code>Research</Code> and give the agent a hackathon URL.
+            Nothing learned yet. Open <Code>Teach it</Code> and give the agent a hackathon URL.
           </Empty>
         ) : (
           <div className="mt-8 grid gap-4 sm:grid-cols-2">

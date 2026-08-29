@@ -33,7 +33,7 @@ export function ResearchSplit({ agentName }: { agentName: string }) {
           <div className="flex shrink-0 items-center gap-2 border-b px-5 py-2.5">
             <Database className="size-3.5 text-muted-foreground" />
             <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              Research result
+              What it learned
             </h2>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
