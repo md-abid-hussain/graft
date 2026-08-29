@@ -289,6 +289,5 @@ export const chunks = pgTable(
 
 export type Hackathon = typeof hackathons.$inferSelect;
 export type Product = typeof products.$inferSelect;
-export type HackathonProduct = typeof hackathonProducts.$inferSelect;
 export type Source = typeof sources.$inferSelect;
 export type Chunk = typeof chunks.$inferSelect;

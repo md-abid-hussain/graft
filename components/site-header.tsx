@@ -10,7 +10,7 @@ const NAV = [
   { href: "/docs", label: "Ask the docs" },
 ];
 
-const REPO = "https://github.com/md-abid-hussain/we-help-agents";
+const REPO = "https://github.com/md-abid-hussain/graft";
 
 export function SiteHeader() {
   return (

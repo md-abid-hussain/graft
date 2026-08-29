@@ -11,9 +11,8 @@ export const metadata = { title: "Ask the docs" };
 /**
  * Chat with the ingested docs.
  *
- * A dedicated chat surface, so this uses the SDK's own `sidebar` layout full-page
- * rather than the compact split the teaching view needs — there is no second half
- * answers cite their sources themselves.
+ * A dedicated chat surface rather than the split `/research` needs: there is no second
+ * half to show, because answers cite their own sources inline.
  */
 export default function DocsChatPage() {
   return (

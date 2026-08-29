@@ -141,5 +141,3 @@ export function sectionsFor(h: HackathonDetail) {
       h.sponsors.length > 0 || h.projectIdeas.length > 0 || h.bestPractices.length > 0,
   };
 }
-
-export type HackathonSections = ReturnType<typeof sectionsFor>;

@@ -189,10 +189,10 @@ _To be completed before submission._ Needs: a link to at least one representativ
 pull request with meaningful hackathon code, what Qodo surfaced and what was changed or
 deliberately dismissed, and the follow-up review against the final code.
 
-Reviewed so far: [#5](https://github.com/md-abid-hussain/we-help-agents/pull/5),
-[#6](https://github.com/md-abid-hussain/we-help-agents/pull/6),
-[#11](https://github.com/md-abid-hussain/we-help-agents/pull/11),
-[#12](https://github.com/md-abid-hussain/we-help-agents/pull/12).
+Reviewed so far: [#5](https://github.com/md-abid-hussain/graft/pull/5),
+[#6](https://github.com/md-abid-hussain/graft/pull/6),
+[#11](https://github.com/md-abid-hussain/graft/pull/11),
+[#12](https://github.com/md-abid-hussain/graft/pull/12).
 
 ## AI assistance disclosure
 
