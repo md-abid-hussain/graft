@@ -59,8 +59,17 @@ re-runs nearly free.
 
 The host is the state: \`www.wemakedevs.org\` while it runs, moving to
 \`archive.wemakedevs.org\` on the same path once results are declared. luma.com and
-devpost hackathons are out of scope. Slugs are not derivable from titles — "Into
-the Scrape-Verse" is \`scrape-verse\`.
+devpost hackathons are out of scope.
+
+Two different slugs, do not mix them. The one in the URL locates the page and is not
+derivable from the title — "Into the Scrape-Verse" lives at \`scrape-verse\`. The
+\`hackathon\` you send to this server is its own key, slugified from the **title**,
+short: drop a leading "the", drop punctuation, stop at the distinctive part.
+"Agents of SigNoz" is \`agents-of-signoz\`; "The Hangover Part AI: Where's My
+Context?" is \`hangover-part-ai\`. WeMakeDevs names its paths after the sponsor, so
+reusing one would file the event under the product and overwrite it the next time
+that sponsor runs something. Product slugs come from the product name the same way —
+\`falkordb\`, \`trueforge\` — so a hackathon and its sponsor never collide.
 
 **2 — save_hackathon.** Products link to it, so it goes first. The page sections map
 one to one, in this order: \`challenge\`, \`tracks\`, \`judging\`,
