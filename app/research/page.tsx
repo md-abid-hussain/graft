@@ -13,7 +13,7 @@ export const metadata = { title: "Research" };
  * and sets no height of its own, so an unresolved parent collapses the chat to
  * nothing — the most common way this integration renders blank.
  */
-export default function UiRunPage() {
+export default function ResearchPage() {
   return (
     <div className="flex h-dvh min-h-0 flex-col">
       <header className="flex shrink-0 items-center gap-3 border-b px-4 py-2.5">
