@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SponsorMark } from "@/components/sponsor-mark";
 import { buttonVariants } from "@/components/ui/button";
 import { getHackathon, sectionsFor } from "@/lib/hackathons";
-import { cn } from "@/lib/utils";
+import { cn, safeHref } from "@/lib/utils";
 import { SubNav } from "./sub-nav";
 
 export const dynamic = "force-dynamic";
@@ -74,9 +74,9 @@ export default async function HackathonLayout({
           ) : null}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            {h.registrationUrl ? (
+            {safeHref(h.registrationUrl) ? (
               <a
-                href={h.registrationUrl}
+                href={safeHref(h.registrationUrl)}
                 target="_blank"
                 rel="noreferrer"
                 className={cn(buttonVariants({ size: "sm" }), "rounded-full")}
@@ -85,15 +85,17 @@ export default async function HackathonLayout({
                 <ArrowUpRight className="size-3.5" />
               </a>
             ) : null}
-            <a
-              href={h.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              Original page
-              <ArrowUpRight className="size-3" />
-            </a>
+            {safeHref(h.sourceUrl) ? (
+              <a
+                href={safeHref(h.sourceUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Original page
+                <ArrowUpRight className="size-3" />
+              </a>
+            ) : null}
             {h.sponsors.length > 0 ? (
               <span className="ml-auto flex items-center gap-2">
                 {h.sponsors.map((s) => (

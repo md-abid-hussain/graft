@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Loader2, MessageSquare, Trophy } from "lucide-react";
+import { ArrowUpRight, DatabaseZap, Loader2, MessageSquare, Trophy } from "lucide-react";
 import { Section, TitledList } from "@/components/section";
 import { SponsorMark } from "@/components/sponsor-mark";
 import type { HackathonDetail } from "@/lib/hackathons";
@@ -20,6 +20,8 @@ type Payload = {
   slug: string | null;
   hackathon: HackathonDetail | null;
   products: string[];
+  /** Set when the corpus could not be read — a missing record, not a pending one. */
+  dbDown?: boolean;
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -69,6 +71,18 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
     return (
       <Placeholder icon={<Loader2 className="size-5 animate-spin" />} title="Reading the run">
         Checking what this session has stored.
+      </Placeholder>
+    );
+  }
+
+  // Checked before the approval state: an unreadable database also arrives as a null
+  // record, and telling the operator to go and approve something would send them
+  // looking for a gate that is not there.
+  if (data.dbDown) {
+    return (
+      <Placeholder icon={<DatabaseZap className="size-5" />} title="Corpus unreachable">
+        Postgres is not responding, so what this run stored cannot be read. The run
+        itself is unaffected — start it with <Mono>pnpm db:up</Mono>.
       </Placeholder>
     );
   }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Globe, MapPin } from "lucide-react";
 import { SponsorMark } from "@/components/sponsor-mark";
 import type { HackathonCard as Card } from "@/lib/hackathons";
-import { cn } from "@/lib/utils";
+import { cn, safeHref } from "@/lib/utils";
 
 /** Socials are stored per product; only these three ever appear in practice. */
 const SOCIALS = [
@@ -139,9 +139,14 @@ function IconLink({
   label: string;
   children: React.ReactNode;
 }) {
+  // Stored URLs predate the http(s)-only write contract, so a bad scheme renders as
+  // nothing rather than as a clickable one.
+  const safe = safeHref(href);
+  if (!safe) return null;
+
   return (
     <a
-      href={href}
+      href={safe}
       target="_blank"
       rel="noreferrer"
       aria-label={label}

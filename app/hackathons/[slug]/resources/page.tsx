@@ -3,6 +3,7 @@ import { ArrowUpRight, BookOpen, FileText, Globe } from "lucide-react";
 import { Section, TitledList } from "@/components/section";
 import { SponsorMark } from "@/components/sponsor-mark";
 import { getHackathon, sectionsFor } from "@/lib/hackathons";
+import { safeHref } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -120,9 +121,12 @@ function ResourceLink({
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const safe = safeHref(href);
+  if (!safe) return null;
+
   return (
     <a
-      href={href}
+      href={safe}
       target="_blank"
       rel="noreferrer"
       className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-accent"

@@ -5,15 +5,33 @@ import { getHackathon, sectionsFor } from "@/lib/hackathons";
 
 export const dynamic = "force-dynamic";
 
+const FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+};
+
+/**
+ * A stored zone reaches Intl directly, and an unrecognised one throws a RangeError —
+ * which would take the whole route down with a 500. Rows written before the input
+ * check still hold arbitrary strings, so the zone is tested once and the footnote
+ * follows the same answer; claiming a zone the formatter refused would be worse than
+ * saying nothing.
+ */
+function usableZone(tz: string | null): string | null {
+  if (!tz) return null;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return tz;
+  } catch {
+    return null;
+  }
+}
+
 const when = (d: Date, tz: string | null) =>
-  d.toLocaleString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    ...(tz ? { timeZone: tz } : {}),
-  });
+  d.toLocaleString(undefined, tz ? { ...FORMAT, timeZone: tz } : FORMAT);
 
 export default async function SchedulePage({
   params,
@@ -27,6 +45,8 @@ export default async function SchedulePage({
   // Most WeMakeDevs pages publish no machine-readable dates, so this tab only exists
   // for the minority that do.
   if (!sectionsFor(h).schedule) notFound();
+
+  const zone = usableZone(h.timezone);
 
   return (
     <Section title="Schedule">
@@ -44,15 +64,15 @@ export default async function SchedulePage({
               <span>
                 <span className="block text-sm font-medium">{e.label}</span>
                 <span className="block text-sm text-muted-foreground">
-                  {when(e.at, h.timezone)}
+                  {when(e.at, zone)}
                 </span>
               </span>
             </li>
           ))}
       </ol>
-      {h.timezone ? (
-        <p className="mt-4 text-xs text-muted-foreground">Times shown in {h.timezone}.</p>
-      ) : null}
+      <p className="mt-4 text-xs text-muted-foreground">
+        {zone ? `Times shown in ${zone}.` : "Times shown in your local zone."}
+      </p>
     </Section>
   );
 }

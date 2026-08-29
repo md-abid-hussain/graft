@@ -23,8 +23,12 @@ export function SubNav({
   const base = `/hackathons/${slug}`;
   const visible = TABS.filter((t) => sections[t.key]);
 
-  // A single tab is not navigation, it is a label.
-  if (visible.length < 2) return <div className="mt-7" />;
+  // A lone Overview tab is a label, not navigation — the card already lands there.
+  // A lone Rules or Resources tab is the only route to content the base page does not
+  // show, so it has to stay clickable.
+  if (visible.length === 0 || (visible.length === 1 && visible[0].key === "overview")) {
+    return <div className="mt-7" />;
+  }
 
   return (
     <nav className="mt-7 flex gap-1 overflow-x-auto">

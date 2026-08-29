@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { EmptySection, Section, TitledList } from "@/components/section";
-import { getHackathon } from "@/lib/hackathons";
+import { getHackathon, sectionsFor } from "@/lib/hackathons";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,13 @@ export default async function OverviewPage({
   const h = await getHackathon(slug);
   if (!h) notFound();
 
-  const empty =
-    !h.description &&
-    h.challenge.length === 0 &&
-    h.tracks.length === 0 &&
-    h.judging.length === 0;
+  // Every card links here, so a record whose only content lives under Rules or
+  // Resources would otherwise open on an empty page with no way onward.
+  const sections = sectionsFor(h);
+  if (!sections.overview) {
+    const elsewhere = (["rules", "schedule", "resources"] as const).find((k) => sections[k]);
+    if (elsewhere) redirect(`/hackathons/${slug}/${elsewhere}`);
 
-  if (empty) {
     return (
       <EmptySection>
         Nothing stored for this hackathon beyond its title. Re-run research to fill it in.

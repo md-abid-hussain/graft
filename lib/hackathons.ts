@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { hackathonProducts, hackathons, products, sources } from "@/lib/db/schema";
@@ -74,7 +75,7 @@ export type HackathonCard = Awaited<ReturnType<typeof listHackathons>>[number];
  * sponsor's name to the title, while ids stayed put — so an old session asking for
  * `cognee` should still find the row now slugged `hangover-part-ai` at `hk_cognee`.
  */
-export async function getHackathon(slug: string) {
+export const getHackathon = cache(async (slug: string) => {
   const [row] =
     (await db.select().from(hackathons).where(eq(hackathons.slug, slug)).limit(1)) ??
     [];
@@ -117,7 +118,7 @@ export async function getHackathon(slug: string) {
       sources: sourceRows.filter((s) => s.productId === p.id),
     })),
   };
-}
+});
 
 export type HackathonDetail = NonNullable<Awaited<ReturnType<typeof getHackathon>>>;
 
