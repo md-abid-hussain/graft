@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db/connection";
 import { HACKATHON_FIELDS, hackathonInput } from "../inputs";
-import { WRITE, changed, dbFailed, idFor, reply } from "../shared";
+import { WRITE, changed, dbFailed, idOf, reply } from "../shared";
 
 export function registerSaveHackathon(server: McpServer) {
   server.registerTool(
@@ -33,13 +33,15 @@ export function registerSaveHackathon(server: McpServer) {
       annotations: WRITE,
     },
     async (input) => {
-      const id = idFor("hk", input.hackathon);
-
       const [existing] = await db
         .select({ id: schema.hackathons.id })
         .from(schema.hackathons)
         .where(eq(schema.hackathons.slug, input.hackathon))
         .limit(1);
+
+      // Reuse the stored id rather than re-deriving: a row written under an older
+      // derivation must keep updating in place, not collide on the unique slug.
+      const id = idOf("hk", input.hackathon, existing?.id);
 
       const fields = {
         title: input.title,

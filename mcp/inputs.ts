@@ -8,9 +8,8 @@ import { date, slug, url } from "./shared";
  * Separated from the tools themselves for one reason: while each tool declared its
  * input inline, nothing could compare a write against the matching read, and the two
  * drifted — `socials` existed twice, once here with URL validation and once in
- * `schemas.ts` without it. `pnpm check:schema` now diffs these against the read
- * schemas and fails when a field is accepted on write but never read back, or read
- * but not writable.
+ * `schemas.ts` without it. Keeping both directions in one place is what makes that
+ * divergence visible.
  *
  * Optional fields are `.nullish()` throughout, never `.optional()`. Reads emit
  * `null` for an empty column, so a caller that reads a record, edits one field and

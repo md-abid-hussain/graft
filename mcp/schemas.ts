@@ -25,8 +25,6 @@ import { url } from "./shared";
  * GitHub URL for this product" is a fact worth transmitting. Writes therefore accept
  * `null` as well as absence — see `changed()` in `shared.ts`, where omitting a field
  * leaves it alone and passing `null` clears it.
- *
- * `pnpm check:schema` enforces rule 1 against `lib/db/schema.ts` in CI.
  */
 
 /** Timestamps cross the wire as ISO 8601. */

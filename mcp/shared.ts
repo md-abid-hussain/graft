@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProductSocials } from "@/lib/db/schema";
 
 /**
  * The pieces every tool needs, in one place so no two tools can drift apart on
@@ -80,9 +81,46 @@ export const WRITE = {
   idempotentHint: true,
 } as const;
 
-/** Slugs are the public key everywhere; ids are derived so they never need inventing. */
-export const idFor = (prefix: string, value: string) =>
-  `${prefix}_${value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`;
+/**
+ * Slugs are the public key everywhere; ids are derived so they never need inventing.
+ *
+ * The slug goes in verbatim. An earlier version collapsed every run of
+ * non-alphanumerics to a single underscore, which is not injective against a
+ * validator that allows repeated hyphens: `a-b` and `a--b` both became `a_b`. The
+ * second save then hit the first row's primary key, overwrote its fields without
+ * touching its slug, and reported the second entity as created when no such row
+ * existed. `slug` is already constrained to `[a-z0-9-]+`, so it needs no escaping.
+ *
+ * Callers should prefer an id already stored against the slug — see `idOf` — so a
+ * row written under an older derivation stays addressable.
+ */
+export const idFor = (prefix: string, slugValue: string) => `${prefix}_${slugValue}`;
+
+/** The stored id if the row exists, otherwise a fresh one derived from the slug. */
+export const idOf = (prefix: string, slugValue: string, existingId?: string) =>
+  existingId ?? idFor(prefix, slugValue);
+
+/**
+ * Apply submitted social handles on top of the stored ones.
+ *
+ * `socials` is a single jsonb column holding three independently optional keys, so
+ * the omit/null rule has to be applied per key rather than to the column: an absent
+ * key keeps what is stored, an explicit null removes that one handle. Building the
+ * value from the submitted object alone made every partial edit destructive —
+ * clearing X also deleted LinkedIn and YouTube.
+ */
+export function mergeSocials(
+  stored: ProductSocials | null | undefined,
+  submitted: Partial<Record<keyof ProductSocials, string | null | undefined>> | null,
+): ProductSocials {
+  const merged: ProductSocials = { ...(stored ?? {}) };
+  for (const [key, value] of Object.entries(submitted ?? {})) {
+    const k = key as keyof ProductSocials;
+    if (value === null) delete merged[k];
+    else if (value !== undefined) merged[k] = value;
+  }
+  return merged;
+}
 
 export const slug = z
   .string()

@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db/connection";
 import { PRODUCT_FIELDS, productInput } from "../inputs";
-import { WRITE, changed, dbFailed, idFor, reply, unknownSlugToWrite } from "../shared";
+import { WRITE, changed, dbFailed, idOf, mergeSocials, reply, unknownSlugToWrite } from "../shared";
 
 export function registerSaveProduct(server: McpServer) {
   server.registerTool(
@@ -44,8 +44,6 @@ export function registerSaveProduct(server: McpServer) {
       annotations: WRITE,
     },
     async (input) => {
-      const id = idFor("prd", input.product);
-
       let hackathonId: string | null = null;
       if (input.hackathon) {
         const [h] = await db
@@ -59,22 +57,25 @@ export function registerSaveProduct(server: McpServer) {
       }
 
       const [existing] = await db
-        .select({ id: schema.products.id })
+        .select({ id: schema.products.id, socials: schema.products.socials })
         .from(schema.products)
         .where(eq(schema.products.slug, input.product))
         .limit(1);
+
+      // Reuse the stored id rather than re-deriving: a row written under an older
+      // derivation must keep updating in place, not collide on the unique slug.
+      const id = idOf("prd", input.product, existing?.id);
 
       const fields = {
         name: input.name,
         category: input.category,
         ...changed(input, PRODUCT_FIELDS),
-        // Null is how a caller clears one handle; it should not be stored as a
-        // null-valued key inside the jsonb. Reads add the nulls back.
-        ...(input.socials !== undefined && {
-          socials: Object.fromEntries(
-            Object.entries(input.socials ?? {}).filter(([, v]) => v != null),
-          ),
-        }),
+        // Merged against what is stored, not replacing it. The three handles are
+        // independently optional, so the omit/null rule has to hold per key: an
+        // absent key keeps whatever is there, an explicit null removes that one
+        // handle. Assigning the submitted object wholesale meant clearing X also
+        // deleted LinkedIn and YouTube.
+        ...(input.socials !== undefined && { socials: mergeSocials(existing?.socials, input.socials) }),
         updatedAt: new Date(),
       };
 
@@ -85,16 +86,21 @@ export function registerSaveProduct(server: McpServer) {
           .onConflictDoUpdate({ target: schema.products.id, set: fields });
 
         if (hackathonId) {
-          await db
+          const link = db
             .insert(schema.hackathonProducts)
-            .values({ hackathonId, productId: id, notes: input.notes ?? null })
-            .onConflictDoUpdate({
-              target: [
-                schema.hackathonProducts.hackathonId,
-                schema.hackathonProducts.productId,
-              ],
-              set: { notes: input.notes ?? null },
-            });
+            .values({ hackathonId, productId: id, notes: input.notes ?? null });
+          const target = [
+            schema.hackathonProducts.hackathonId,
+            schema.hackathonProducts.productId,
+          ];
+
+          // Same omit/null rule as everywhere else: only write `notes` when the
+          // caller actually sent it. Collapsing the two here meant re-saving a
+          // product to refresh its links silently erased the note on its
+          // appearance at that hackathon.
+          await (input.notes === undefined
+            ? link.onConflictDoNothing({ target })
+            : link.onConflictDoUpdate({ target, set: { notes: input.notes } }));
         }
       } catch (error) {
         return dbFailed(`Saving product '${input.product}'`, error);
