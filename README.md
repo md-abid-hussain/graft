@@ -56,7 +56,7 @@ rather than as someone's browser state.
 | Research agent — hackathon in, approved records out | **working** |
 | Docs agent — questions answered from indexed documentation | **working** |
 | Shared memory — Postgres + pgvector, hybrid retrieval, served over MCP | **working** |
-| Web app — see what it knows, teach it, ask it | **working** |
+| Web app — see what it knows, research a hackathon, ask it | **working** |
 | Integration agent — repo in, sandboxed change out, pull request gated | **in progress** |
 
 ## Quickstart
@@ -77,8 +77,8 @@ Then open:
 |---|---|
 | `/` | What this is |
 | `/hackathons` | What it knows — overview, rules, schedule, resources |
-| `/ui/run` | Teach it a hackathon, with what it learned appearing beside the chat |
-| `/ui/docs` | Ask questions against the indexed documentation |
+| `/research` | Research a hackathon, with what it learned appearing beside the chat |
+| `/docs` | Ask questions against the indexed documentation |
 
 It starts knowing nothing. The research agent fills it by calling `save_hackathon`,
 `save_product` and `ingest_source` — each one pausing for your approval. The path a judge
@@ -156,7 +156,7 @@ Not as a model wrapper. The harness does work this project would otherwise have 
   on demand rather than loaded into context up front.
 - **Subagents.** Research fans out across a hackathon's sponsors in parallel and merges
   only the results.
-- **Sessions that survive.** `/ui/run` reads a session's own event log to work out which
+- **Sessions that survive.** `/research` reads a session's own event log to work out which
   hackathon it produced, so reopening an old conversation shows what it learned.
 
 The shared memory is served over MCP rather than wired into one runtime, so it is not

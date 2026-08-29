@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ResearchSplit } from "@/components/research-split";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { AGENT_NAME } from "@/lib/trueforge/client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Teach" };
+export const metadata = { title: "Research" };
 
 /**
  * `h-dvh` with `min-h-0` down the tree is load-bearing: the UI SDK fills its parent
@@ -23,16 +24,19 @@ export default function UiRunPage() {
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="text-sm font-medium">Teach Graft a hackathon</h1>
+        <h1 className="text-sm font-medium">Research a hackathon</h1>
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
           {AGENT_NAME}
         </span>
-        <Link
-          href="/hackathons"
-          className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-        >
-          All hackathons
-        </Link>
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            href="/hackathons"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            All hackathons
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       <ResearchSplit agentName={AGENT_NAME} />

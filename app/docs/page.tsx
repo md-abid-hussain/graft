@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ChatPanel } from "@/components/chat-panel";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DOC_AGENT_NAME } from "@/lib/trueforge/client";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +30,15 @@ export default function DocsChatPage() {
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
           {DOC_AGENT_NAME}
         </span>
-        <Link
-          href="/ui/run"
-          className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-        >
-          Teach it
-        </Link>
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            href="/research"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Research
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       <div className="min-h-0 flex-1">

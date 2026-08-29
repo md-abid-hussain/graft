@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Brain, GitPullRequest } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import {
+  McpSection,
+  ProblemSection,
+  TrueForgeSection,
+  WhatThisIsSection,
+} from "@/components/landing-sections";
 import { buttonVariants } from "@/components/ui/button";
 import { listHackathons } from "@/lib/hackathons";
 import { cn } from "@/lib/utils";
@@ -8,35 +14,35 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 /**
- * The pitch.
+ * The pitch, argued in order: the problem, what this is, the surface it exposes, and
+ * where the harness sits.
  *
- * Counts come from the corpus rather than being written in, so the page cannot claim
+ * Counts come from the index rather than being written in, so the page cannot claim
  * more than the database actually holds — and reads zero honestly on a fresh install.
  */
 export default async function Page() {
   let hackathons = 0;
-  let products = 0;
+  let tools = 0;
   try {
     const items = await listHackathons();
     hackathons = items.length;
-    const sponsors = items.flatMap((h) => h.sponsors);
-    products = new Set(sponsors.map((s) => s.slug)).size;
+    tools = new Set(items.flatMap((h) => h.sponsors.map((s) => s.slug))).size;
   } catch {
-    // The landing page still reads fine without the corpus.
+    // The landing page still reads without the index.
   }
 
   return (
     <>
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-5xl px-5">
+      <main className="mx-auto w-full max-w-6xl px-5 2xl:max-w-7xl">
         <section className="py-20 sm:py-28">
           <p className="font-mono text-xs tracking-widest text-primary uppercase">
-            For people who do a lot of hackathons
+            Learns with you. Builds with you.
           </p>
 
-          <h1 className="mt-4 max-w-3xl font-heading text-4xl leading-[1.1] tracking-tight text-balance sm:text-5xl">
-            Learns with you at one. Builds with you at the next.
+          <h1 className="mt-4 max-w-3xl font-heading text-4xl leading-[1.1] text-balance sm:text-5xl">
+            Learns with you at one hackathon. Builds with you at the next.
           </h1>
 
           <div className="mt-6 max-w-xl space-y-4 text-base leading-relaxed text-muted-foreground">
@@ -47,13 +53,11 @@ export default async function Page() {
             </p>
             <p>
               Graft doesn&apos;t. It reads each stack properly the first time, into an
-              index it keeps. When you need one of them again it already knows it — so
-              it reads your repository, writes the integration in a sandbox, and runs
-              your own test suite against it.
+              index it keeps. When you need one of them again it already knows it — so it
+              reads your repository, writes the integration in a sandbox, and runs your
+              own test suite against it.
             </p>
-            <p className="text-foreground">
-              You review a diff that already passes.
-            </p>
+            <p className="text-foreground">You review a diff that already passes.</p>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -62,40 +66,27 @@ export default async function Page() {
               <ArrowRight className="size-4" />
             </Link>
             <Link
-              href="/ui/run"
+              href="/research"
               className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}
             >
-              Teach it a hackathon
+              Research a hackathon
             </Link>
           </div>
 
           {hackathons > 0 ? (
             <p className="mt-6 text-sm text-muted-foreground">
-              <Count n={products} /> tool{products === 1 ? "" : "s"} learned across{" "}
+              <Count n={tools} /> tool{tools === 1 ? "" : "s"} learned across{" "}
               <Count n={hackathons} /> hackathon{hackathons === 1 ? "" : "s"}.
             </p>
           ) : null}
         </section>
 
-        <section className="grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-3">
-          <Step
-            icon={<BookOpen className="size-4" />}
-            title="It learns with you"
-            body="While you work through a hackathon, it reads that stack from its own documentation — the event, its sponsors, their docs — and keeps what it found, cited."
-          />
-          <Step
-            icon={<Brain className="size-4" />}
-            title="It remembers"
-            body="The next hackathon does not start from zero. What it learned in March is still there in June, and it never re-reads a page it has already indexed."
-          />
-          <Step
-            icon={<GitPullRequest className="size-4" />}
-            title="It builds with you"
-            body="Ask it to add something it knows. It reads your repository, writes the change in a sandbox, runs your tests, and opens a pull request you approve."
-          />
-        </section>
+        <ProblemSection />
+        <WhatThisIsSection />
+        <McpSection />
+        <TrueForgeSection />
 
-        <footer className="mt-12 border-t py-8 text-xs text-muted-foreground">
+        <footer className="border-t py-10 text-xs text-muted-foreground">
           Built for The Agent Harness Hackathon · WeMakeDevs × TrueFoundry × Qodo
         </footer>
       </main>
@@ -105,24 +96,4 @@ export default async function Page() {
 
 function Count({ n }: { n: number }) {
   return <span className="font-semibold text-foreground tabular-nums">{n}</span>;
-}
-
-function Step({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="bg-background p-6">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <h2 className="mt-3 font-heading text-base font-semibold">{title}</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
-    </div>
-  );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, DatabaseZap, Loader2, MessageSquare, Trophy } from "lucide-react";
-import { Section, TitledList } from "@/components/section";
+import { Section, TitledList, TrackList } from "@/components/section";
 import { SponsorMark } from "@/components/sponsor-mark";
 import type { HackathonDetail } from "@/lib/hackathons";
 import { cn } from "@/lib/utils";
@@ -138,34 +138,20 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
 
       <div className="px-5 pb-8">
         {h.tracks.length > 0 ? (
-          <Section title="Tracks &amp; prizes" count={h.tracks.length}>
-            <ul className="space-y-2">
-              {h.tracks.map((t) => (
-                <li key={t.name} className="rounded-xl border bg-card p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-balance">{t.name}</h3>
-                    {t.prize ? (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        <Trophy className="size-3" />
-                        {t.prize}
-                      </span>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <Section title="Tracks & prizes" count={h.tracks.length}>
+            <TrackList tracks={h.tracks} />
           </Section>
         ) : null}
 
         {h.challenge.length > 0 ? (
           <Section title="The challenge" count={h.challenge.length}>
-            <TitledList items={h.challenge} />
+            <TitledList items={h.challenge} layout="stack" />
           </Section>
         ) : null}
 
         {h.judging.length > 0 ? (
           <Section title="Judging" count={h.judging.length}>
-            <TitledList items={h.judging} />
+            <TitledList items={h.judging} layout="stack" />
           </Section>
         ) : null}
 
@@ -218,7 +204,8 @@ function Coverage({ hackathon: h }: { hackathon: HackathonDetail }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1 border-t pt-4 text-xs text-muted-foreground">
+    // No rule of its own: the section above closes with one.
+    <div className="flex flex-wrap gap-x-4 gap-y-1 pt-4 text-xs text-muted-foreground">
       {items.map((i) => (
         <span key={i.label}>
           <span className="font-semibold text-foreground tabular-nums">{i.n}</span> {i.label}

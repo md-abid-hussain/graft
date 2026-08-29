@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local scratch: vendored design exports and reference docs, worked from rather
+    // than maintained. Git ignores this folder too, so nothing here is ours to lint.
+    "docs-to-ignore/**",
   ]),
 ]);
 
