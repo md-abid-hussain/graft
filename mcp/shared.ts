@@ -131,7 +131,15 @@ export const slug = z
   .max(64, "at most 64 characters — shorten it rather than sending the whole title")
   .regex(/^[a-z0-9][a-z0-9-]*$/, "lowercase letters, digits and hyphens only");
 
-export const url = z.string().url();
+/**
+ * Web URLs only.
+ *
+ * `z.string().url()` accepts any WHATWG-parseable URL, `javascript:` and `data:`
+ * included. Every URL here is scraped from a page the agent was pointed at and later
+ * rendered as an href, so a permissive validator turns researched content into stored
+ * script execution. `httpUrl()` restricts the scheme at the point of entry.
+ */
+export const url = z.httpUrl();
 export const date = z.string().datetime({ offset: true });
 
 /**

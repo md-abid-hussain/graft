@@ -46,12 +46,12 @@ export const discoveryMethod = z.enum(["llms-full", "llms", "sitemap", "crawl", 
  * times, in two files, with nothing but a test keeping the names aligned — so the
  * names live here once and both shapes are derived.
  */
-const nullableAll = <T extends Record<string, z.ZodString>>(shape: T) =>
+const nullableAll = <T extends Record<string, z.ZodType>>(shape: T) =>
   Object.fromEntries(
     Object.entries(shape).map(([k, v]) => [k, v.nullable()]),
   ) as { [K in keyof T]: z.ZodNullable<T[K]> };
 
-const nullishAll = <T extends Record<string, z.ZodString>>(shape: T) =>
+const nullishAll = <T extends Record<string, z.ZodType>>(shape: T) =>
   Object.fromEntries(
     Object.entries(shape).map(([k, v]) => [k, v.nullish()]),
   ) as { [K in keyof T]: z.ZodOptional<z.ZodNullable<T[K]>> };

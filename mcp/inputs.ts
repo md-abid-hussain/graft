@@ -27,6 +27,15 @@ import { date, slug, url } from "./shared";
  * mean.
  */
 
+function isTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** An array section: omit to leave it, null to empty it. */
 const section = <T extends z.ZodTypeAny>(item: T) =>
   z
@@ -55,6 +64,9 @@ export const hackathonInput = z.object({
   endsAt: date.nullish().describe("ISO 8601 with offset — the submission deadline"),
   timezone: z
     .string()
+    // Checked against Intl rather than described as IANA and hoped for: this value is
+    // handed straight to a date formatter, and an unrecognised zone throws there.
+    .refine(isTimeZone, "not a time zone this runtime recognises")
     .nullish()
     .describe("IANA zone the hackathon publishes its times in, e.g. 'Europe/London'"),
   status: cleared(s.hackathonStatus, "unknown"),
