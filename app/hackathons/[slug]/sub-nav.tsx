@@ -31,7 +31,11 @@ export function SubNav({
   }
 
   return (
-    <nav className="mt-7 flex gap-1 overflow-x-auto">
+    // `overflow-y-hidden` is load-bearing. `overflow-x: auto` alone computes the other
+    // axis to `auto` as well, and the tabs' `-mb-px` overlap leaves exactly one pixel of
+    // vertical overflow — enough for Chrome to hang a full vertical scrollbar off the
+    // right of the tab strip.
+    <nav className="mt-7 flex gap-1 overflow-x-auto overflow-y-hidden">
       {visible.map((tab) => {
         const href = tab.segment ? `${base}/${tab.segment}` : base;
         const active = pathname === href;

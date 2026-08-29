@@ -4,82 +4,94 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Graft theme — pine-green accent on cool-neutral surfaces.
+   Drop-in replacement for the amber/rust scale in app/globals.css.
+   Structure follows that file exactly (same token names, same @theme inline
+   block, same @layer base) so only the values differ. Accent hue held at ~166
+   and neutrals at ~155 so tints never fight each other. */
+
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.147 0.004 49.3);
+    --background: oklch(0.982 0.003 155);
+    --foreground: oklch(0.198 0.014 162);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.147 0.004 49.3);
+    --card-foreground: oklch(0.198 0.014 162);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.147 0.004 49.3);
-    --primary: oklch(0.555 0.163 48.998);
-    --primary-foreground: oklch(0.987 0.022 95.277);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.96 0.002 17.2);
-    --muted-foreground: oklch(0.547 0.021 43.1);
-    --accent: oklch(0.96 0.002 17.2);
-    --accent-foreground: oklch(0.214 0.009 43.1);
+    --popover-foreground: oklch(0.198 0.014 162);
+    --primary: oklch(0.512 0.055 166);
+    --primary-foreground: oklch(0.995 0.002 155);
+    --secondary: oklch(0.958 0.004 155);
+    --secondary-foreground: oklch(0.268 0.014 162);
+    --muted: oklch(0.958 0.004 155);
+    --muted-foreground: oklch(0.492 0.013 158);
+    --accent: oklch(0.948 0.012 165);
+    --accent-foreground: oklch(0.352 0.042 166);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0.005 34.3);
-    --input: oklch(0.922 0.005 34.3);
-    --ring: oklch(0.714 0.014 41.2);
-    --chart-1: oklch(0.868 0.007 39.5);
-    --chart-2: oklch(0.547 0.021 43.1);
-    --chart-3: oklch(0.438 0.017 39.3);
-    --chart-4: oklch(0.367 0.016 35.7);
-    --chart-5: oklch(0.268 0.011 36.5);
+    --border: oklch(0.908 0.005 155);
+    --input: oklch(0.908 0.005 155);
+    --ring: oklch(0.512 0.055 166);
+    /* Sequential ramp off the accent hue — readable side by side, unlike the
+       default five-grey scale which is indistinguishable in a legend. */
+    --chart-1: oklch(0.512 0.055 166);
+    --chart-2: oklch(0.612 0.048 172);
+    --chart-3: oklch(0.702 0.042 178);
+    --chart-4: oklch(0.788 0.034 184);
+    --chart-5: oklch(0.862 0.026 190);
     --radius: 0.875rem;
     /* The chat SDK names two of its own tokens --border and --radius, so pointing
        those at ours would be self-referential and resolve to nothing. These aliases
        give it a different name to read the same value from. */
     --app-radius: 0.875rem;
-    --sidebar: oklch(0.986 0.002 67.8);
-    --sidebar-foreground: oklch(0.147 0.004 49.3);
-    --sidebar-primary: oklch(0.666 0.179 58.318);
-    --sidebar-primary-foreground: oklch(0.987 0.022 95.277);
-    --sidebar-accent: oklch(0.96 0.002 17.2);
-    --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
-    --sidebar-border: oklch(0.922 0.005 34.3);
-    --sidebar-ring: oklch(0.714 0.014 41.2);
+    --sidebar: oklch(0.968 0.004 155);
+    --sidebar-foreground: oklch(0.198 0.014 162);
+    --sidebar-primary: oklch(0.512 0.055 166);
+    --sidebar-primary-foreground: oklch(0.995 0.002 155);
+    --sidebar-accent: oklch(0.948 0.012 165);
+    --sidebar-accent-foreground: oklch(0.352 0.042 166);
+    --sidebar-border: oklch(0.908 0.005 155);
+    --sidebar-ring: oklch(0.512 0.055 166);
 }
 
 .dark {
-    --background: oklch(0.147 0.004 49.3);
-    --foreground: oklch(0.986 0.002 67.8);
-    --card: oklch(0.214 0.009 43.1);
-    --card-foreground: oklch(0.986 0.002 67.8);
-    --popover: oklch(0.214 0.009 43.1);
-    --popover-foreground: oklch(0.986 0.002 67.8);
-    --primary: oklch(0.473 0.137 46.201);
-    --primary-foreground: oklch(0.987 0.022 95.277);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.268 0.011 36.5);
-    --muted-foreground: oklch(0.714 0.014 41.2);
-    --accent: oklch(0.268 0.011 36.5);
-    --accent-foreground: oklch(0.986 0.002 67.8);
+    --background: oklch(0.178 0.012 162);
+    --foreground: oklch(0.962 0.004 155);
+    --card: oklch(0.222 0.014 162);
+    --card-foreground: oklch(0.962 0.004 155);
+    --popover: oklch(0.222 0.014 162);
+    --popover-foreground: oklch(0.962 0.004 155);
+    --primary: oklch(0.702 0.062 168);
+    --primary-foreground: oklch(0.178 0.018 166);
+    --secondary: oklch(0.268 0.014 162);
+    --secondary-foreground: oklch(0.962 0.004 155);
+    --muted: oklch(0.268 0.014 162);
+    --muted-foreground: oklch(0.712 0.014 158);
+    --accent: oklch(0.288 0.022 165);
+    --accent-foreground: oklch(0.928 0.018 165);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
+    --border: oklch(1 0 0 / 11%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.547 0.021 43.1);
-    --chart-1: oklch(0.868 0.007 39.5);
-    --chart-2: oklch(0.547 0.021 43.1);
-    --chart-3: oklch(0.438 0.017 39.3);
-    --chart-4: oklch(0.367 0.016 35.7);
-    --chart-5: oklch(0.268 0.011 36.5);
-    --sidebar: oklch(0.214 0.009 43.1);
-    --sidebar-foreground: oklch(0.986 0.002 67.8);
-    --sidebar-primary: oklch(0.769 0.188 70.08);
-    --sidebar-primary-foreground: oklch(0.279 0.077 45.635);
-    --sidebar-accent: oklch(0.268 0.011 36.5);
-    --sidebar-accent-foreground: oklch(0.986 0.002 67.8);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.547 0.021 43.1);
+    --ring: oklch(0.702 0.062 168);
+    --chart-1: oklch(0.702 0.062 168);
+    --chart-2: oklch(0.628 0.052 174);
+    --chart-3: oklch(0.548 0.044 180);
+    --chart-4: oklch(0.462 0.036 186);
+    --chart-5: oklch(0.382 0.028 192);
+    --sidebar: oklch(0.222 0.014 162);
+    --sidebar-foreground: oklch(0.962 0.004 155);
+    --sidebar-primary: oklch(0.702 0.062 168);
+    --sidebar-primary-foreground: oklch(0.178 0.018 166);
+    --sidebar-accent: oklch(0.288 0.022 165);
+    --sidebar-accent-foreground: oklch(0.928 0.018 165);
+    --sidebar-border: oklch(1 0 0 / 11%);
+    --sidebar-ring: oklch(0.702 0.062 168);
 }
 
 @theme inline {
     --font-sans: var(--font-sans);
-    --font-heading: var(--font-heading);
+    /* One typeface. `font-heading` stays a valid class — pages already use it —
+       but resolves to the sans; headings are differentiated by weight and
+       tracking in @layer base below, not by a second family. */
+    --font-heading: var(--font-sans);
+    --font-mono: var(--font-mono);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -132,5 +144,11 @@
     }
   html {
     @apply font-sans;
+    }
+  /* What --font-heading used to do, done with weight and tracking instead. */
+  h1, h2, h3, h4 {
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    text-wrap: pretty;
     }
 }

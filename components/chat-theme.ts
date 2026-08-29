@@ -28,7 +28,7 @@ export const CHAT_TOKENS: NonNullable<Theme["tokens"]> = {
   // Literal rather than `var(--font-sans)`: next/font defines that variable through a
   // class on <html>, and it does not substitute into the SDK's inline style. The family
   // name is what next/font loads in app/layout.tsx — keep the two in step.
-  fontFamily: '"DM Sans", ui-sans-serif, system-ui, sans-serif',
+  fontFamily: '"Geist", ui-sans-serif, system-ui, sans-serif',
 
   // Building blocks
   inputBoxBg: "var(--card)",

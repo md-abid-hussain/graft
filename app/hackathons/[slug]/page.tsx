@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { Trophy } from "lucide-react";
-import { EmptySection, Section, TitledList } from "@/components/section";
+import { EmptySection, Section, TitledList, TrackList } from "@/components/section";
 import { getHackathon, sectionsFor } from "@/lib/hackathons";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +31,7 @@ export default async function OverviewPage({
     <div className="space-y-0">
       {h.description ? (
         <Section title="About">
-          <p className="max-w-2xl text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+          <p className="max-w-[66ch] text-base leading-relaxed whitespace-pre-wrap text-foreground/85">
             {h.description}
           </p>
         </Section>
@@ -46,26 +45,7 @@ export default async function OverviewPage({
 
       {h.tracks.length > 0 ? (
         <Section title="Tracks & prizes" count={h.tracks.length}>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {h.tracks.map((t) => (
-              <li key={t.name} className="rounded-xl border bg-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-balance">{t.name}</h3>
-                  {t.prize ? (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      <Trophy className="size-3" />
-                      {t.prize}
-                    </span>
-                  ) : null}
-                </div>
-                {t.criteria ? (
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {t.criteria}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <TrackList tracks={h.tracks} showCriteria />
         </Section>
       ) : null}
 

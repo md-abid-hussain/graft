@@ -24,7 +24,13 @@ export function ResearchSplit({ agentName }: { agentName: string }) {
 
   return (
     <ReportSession.Provider value={report}>
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,32rem)]">
+      {/* The chat column cannot use extra width: the SDK caps its message thread at
+          `--thread-max-width` (704px) and the history rail is a fixed 224px, so beyond
+          928px every pixel the left column gains is empty gutter. Only `2xl` widens the
+          record, because that gutter does not exist below it — at 1024 and 1280 the
+          chat is already under its own cap, and taking width there would come out of
+          the conversation rather than out of the waste. */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,44rem)]">
         <section className="flex min-h-[60svh] flex-col border-b lg:min-h-0 lg:border-r lg:border-b-0">
           <ChatPanel agentName={agentName} />
         </section>
