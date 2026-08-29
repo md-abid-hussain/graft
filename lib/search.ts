@@ -46,7 +46,28 @@ export interface SearchDocsOptions {
   query: string;
   /** Required. Retrieval is always scoped to one product — see `list_products`. */
   product: string;
+  /** Clamped to 1..50. See `boundedLimit`. */
   limit?: number;
+}
+
+const DEFAULT_LIMIT = 10;
+
+/** Backstop ceiling for direct callers. The MCP tool caps itself lower, at 20. */
+const MAX_LIMIT = 50;
+
+/**
+ * Coerce `limit` to something `LIMIT` can accept.
+ *
+ * The `search_docs` tool validates this with Zod, but `searchDocs` is exported and
+ * its type says `number` — which admits `-1`, `2.5`, `NaN` and `Infinity`, none of
+ * which Postgres will take. Interpolated straight into `LIMIT` they turn a bad
+ * argument into a database error, which surfaces to the caller as a failed query
+ * rather than as "that number was wrong". The boundary that owns the SQL owns the
+ * constraint.
+ */
+function boundedLimit(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) return DEFAULT_LIMIT;
+  return Math.min(Math.max(Math.trunc(value), 1), MAX_LIMIT);
 }
 
 /**
@@ -66,10 +87,12 @@ type Row = {
 export async function searchDocs({
   query,
   product,
-  limit = 10,
+  limit,
 }: SearchDocsOptions): Promise<SearchHit[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
+
+  const resultLimit = boundedLimit(limit);
 
   const [vector] = await embed([trimmed]);
   // pgvector's text input format. Parameterised as a string, then cast.
@@ -114,7 +137,7 @@ export async function searchDocs({
     FROM fused
     JOIN chunks c ON c.id = fused.id
     ORDER BY fused.score DESC
-    LIMIT ${limit}
+    LIMIT ${resultLimit}
   `);
 
   return rows.map((r) => {
