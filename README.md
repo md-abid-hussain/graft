@@ -39,11 +39,11 @@ it — and the credential that can write to GitHub never enters the sandbox.
 
 ## The agents
 
-| Agent                       | Job                                                                  |
-| --------------------------- | -------------------------------------------------------------------- |
-| `wemakedevs-research-agent` | Reads a hackathon and its sponsors, asking before it stores anything |
-| `doc-query-agent`           | Answers questions from the indexed documentation, with citations     |
-| `integration-agent`         | Adds a known library to a repository, sandboxed, pull request gated  |
+| Agent          | Job                                                                                           |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| `graft-learn`  | Reads a hackathon and its sponsors, or a product on its own, asking before it stores anything |
+| `graft-recall` | Answers questions from the indexed documentation, with citations                              |
+| `graft-build`  | Adds a known library to a repository, sandboxed, pull request gated                           |
 
 Their specs live in [`trueforge/agents/`](trueforge/agents) — model, tool mounts and
 instructions as files, so a change to how an agent behaves arrives as a pull request
@@ -68,7 +68,7 @@ pnpm install
 cp .env.example .env          # add OPENAI_API_KEY, point TRUEFORGE_BASE_URL at your harness
 pnpm db:up                    # Postgres 16 + pgvector on :5434
 pnpm db:migrate               # extension, tables, indexes
-pnpm dev
+pnpm dev                      # :3100 — Daytona holds 3000
 ```
 
 Then open:
@@ -82,8 +82,8 @@ Then open:
 
 It starts knowing nothing. The research agent fills it by calling `save_hackathon`,
 `save_product` and `ingest_source` — each one pausing for your approval. A product
-that never appeared at a hackathon skips the first of those and is stored just the same. The path a judge
-watches in the demo is the only path that writes.
+that never appeared at a hackathon skips the first of those and is stored just the
+same. The path a judge watches in the demo is the only path that writes.
 
 ## How the agents share a memory
 
