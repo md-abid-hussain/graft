@@ -39,11 +39,11 @@ it — and the credential that can write to GitHub never enters the sandbox.
 
 ## The agents
 
-| Agent | Job |
-|---|---|
+| Agent                       | Job                                                                  |
+| --------------------------- | -------------------------------------------------------------------- |
 | `wemakedevs-research-agent` | Reads a hackathon and its sponsors, asking before it stores anything |
-| `doc-query-agent` | Answers questions from the indexed documentation, with citations |
-| `integration-agent` | Adds a known library to a repository, sandboxed, pull request gated |
+| `doc-query-agent`           | Answers questions from the indexed documentation, with citations     |
+| `integration-agent`         | Adds a known library to a repository, sandboxed, pull request gated  |
 
 Their specs live in [`trueforge/agents/`](trueforge/agents) — model, tool mounts and
 instructions as files, so a change to how an agent behaves arrives as a pull request
@@ -51,13 +51,13 @@ rather than as someone's browser state.
 
 ## Status
 
-| | State |
-|---|---|
-| Research agent — hackathon in, approved records out | **working** |
-| Docs agent — questions answered from indexed documentation | **working** |
-| Shared memory — Postgres + pgvector, hybrid retrieval, served over MCP | **working** |
-| Web app — see what it knows, research a hackathon, ask it | **working** |
-| Integration agent — repo in, sandboxed change out, pull request gated | **in progress** |
+|                                                                         | State           |
+| ----------------------------------------------------------------------- | --------------- |
+| Research agent — a hackathon or a lone product in, approved records out | **working**     |
+| Docs agent — questions answered from indexed documentation              | **working**     |
+| Shared memory — Postgres + pgvector, hybrid retrieval, served over MCP  | **working**     |
+| Web app — see what it knows, research a stack, ask it                   | **working**     |
+| Integration agent — repo in, sandboxed change out, pull request gated   | **in progress** |
 
 ## Quickstart
 
@@ -73,15 +73,16 @@ pnpm dev
 
 Then open:
 
-| Route | |
-|---|---|
-| `/` | What this is |
-| `/hackathons` | What it knows — overview, rules, schedule, resources |
-| `/research` | Research a hackathon, with what it learned appearing beside the chat |
-| `/docs` | Ask questions against the indexed documentation |
+| Route         |                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| `/`           | What this is                                                                             |
+| `/hackathons` | What it knows — overview, rules, schedule, resources                                     |
+| `/research`   | Research a hackathon or a single product, with what it learned appearing beside the chat |
+| `/docs`       | Ask questions against the indexed documentation                                          |
 
 It starts knowing nothing. The research agent fills it by calling `save_hackathon`,
-`save_product` and `ingest_source` — each one pausing for your approval. The path a judge
+`save_product` and `ingest_source` — each one pausing for your approval. A product
+that never appeared at a hackathon skips the first of those and is stored just the same. The path a judge
 watches in the demo is the only path that writes.
 
 ## How the agents share a memory
@@ -94,30 +95,30 @@ an hour re-researching it.
 
 **Read**
 
-| Tool | Purpose |
-|---|---|
-| `how_to_use` | What the server is, how to drive it, and what is indexed right now |
-| `list_products` | Everything on record, with category and how much is indexed |
-| `get_product` | Full record: links, socials, indexed sources, hackathons it appeared at |
-| `list_hackathons` / `get_hackathon` | Hackathons, dates, tracks, judging, rules, requirements |
-| `search_docs` | Hybrid retrieval over one product's docs, every result cited |
+| Tool                                | Purpose                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| `how_to_use`                        | What the server is, how to drive it, and what is indexed right now      |
+| `list_products`                     | Everything on record, with category and how much is indexed             |
+| `get_product`                       | Full record: links, socials, indexed sources, hackathons it appeared at |
+| `list_hackathons` / `get_hackathon` | Hackathons, dates, tracks, judging, rules, requirements                 |
+| `search_docs`                       | Hybrid retrieval over one product's docs, every result cited            |
 
 **Write** — no `readOnlyHint`, so the harness gates them
 
-| Tool | Purpose |
-|---|---|
-| `save_hackathon` | The hackathon record. Step 1: products reference it |
-| `save_product` | A sponsor product, optionally linked to a hackathon |
-| `ingest_source` | Fetch, chunk, embed and index a batch of doc URLs in one approval |
+| Tool             | Purpose                                                           |
+| ---------------- | ----------------------------------------------------------------- |
+| `save_hackathon` | The hackathon record. Step 1: products reference it               |
+| `save_product`   | A sponsor product, optionally linked to a hackathon               |
+| `ingest_source`  | Fetch, chunk, embed and index a batch of doc URLs in one approval |
 
 **Resources** — the same guide the `how_to_use` tool returns, served the spec-correct way
 as well. Exposed twice on purpose: plenty of MCP clients read only `tools/list` and never
 call `resources/list`, so a resource-only guide is invisible to them.
 
-| URI | Purpose |
-|---|---|
-| `guide://usage` | Tool order, how to phrase a search, how to find an `llms-full.txt` |
-| `corpus://status` | Live coverage: what is actually indexed right now |
+| URI               | Purpose                                                            |
+| ----------------- | ------------------------------------------------------------------ |
+| `guide://usage`   | Tool order, how to phrase a search, how to find an `llms-full.txt` |
+| `corpus://status` | Live coverage: what is actually indexed right now                  |
 
 ### Four decisions worth explaining
 
@@ -169,13 +170,13 @@ exactly as they do in TrueForge itself.
 
 ## Stack
 
-| | |
-|---|---|
-| App | Next.js 16, React 19, Tailwind 4, shadcn/ui |
-| Chat | `@truefoundry/trueforge-ui`, embedded in SingleAgent mode |
-| Store | Postgres 16 + pgvector, Drizzle ORM |
-| Embeddings | OpenAI `text-embedding-3-large` at 1536 dimensions |
-| Agents | TrueForge harness |
+|            |                                                           |
+| ---------- | --------------------------------------------------------- |
+| App        | Next.js 16, React 19, Tailwind 4, shadcn/ui               |
+| Chat       | `@truefoundry/trueforge-ui`, embedded in SingleAgent mode |
+| Store      | Postgres 16 + pgvector, Drizzle ORM                       |
+| Embeddings | OpenAI `text-embedding-3-large` at 1536 dimensions        |
+| Agents     | TrueForge harness                                         |
 
 Embeddings are reduced to 1536 dimensions rather than the model's native 3072, because
 pgvector's HNSW index caps at 2000 — at full width every query would fall back to an exact
