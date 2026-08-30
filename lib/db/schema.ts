@@ -37,6 +37,38 @@ export type SourceStatus = "pending" | "indexed" | "failed" | "stale" | "skipped
 export type DiscoveryMethod = "llms-full" | "llms" | "sitemap" | "crawl" | "manual";
 
 /**
+ * Where a piece of work got to.
+ *
+ * Bounded, unlike `builds.kind`, because the UI chips on it and a reader has to be able
+ * to tell at a glance whether anything is owed them. `proposed` is the one that matters:
+ * the agent finished and something is now waiting on a person.
+ */
+export type BuildStatus =
+  | "in_progress"
+  | "proposed"
+  | "done"
+  | "blocked"
+  | "failed";
+
+/**
+ * What a build worked on.
+ *
+ * A list, because the range is genuinely wide: adding one library to one repository is
+ * the common case, but a scaffold touches no repository and a migration may involve two
+ * products. Modelling the common case as columns would have forced the others to lie.
+ *
+ * `name` is the identifier a reader recognises — `owner/repo` for a repository, the
+ * product slug for a product. Nothing here is a foreign key: a build can legitimately
+ * name a repository the corpus has never heard of.
+ */
+export interface BuildTarget {
+  type: "repository" | "product" | "url" | "other";
+  name: string;
+  url?: string | null;
+  note?: string | null;
+}
+
+/**
  * The three platforms that actually carry product news.
  *
  * All optional, and a product may have none — plenty of good tools have no X account
@@ -287,7 +319,63 @@ export const chunks = pgTable(
   ],
 );
 
+/**
+ * A piece of work an agent did, as it reported it.
+ *
+ * The other tables describe things Graft read. This one describes something it *did* —
+ * and unlike research, where the output is a hackathon or a product and the shape is
+ * known, build work varies from "add one library" to "scaffold a project". So the
+ * contract is deliberately thin: what kind of work, what it was done to, where it got
+ * to, and the agent's own account of it in prose.
+ *
+ * `kind` is free text on the same reasoning as `products.category` — the useful values
+ * are not knowable in advance, and an enum here would either be wrong or be a dumping
+ * ground of `other`. `status` is bounded because the UI depends on it meaning something.
+ *
+ * `summary` is markdown on purpose. It is the one field where prose IS the content: a
+ * reviewer wants the narrative, the diff rationale and the caveats, and flattening that
+ * into columns would lose exactly what makes it worth reading.
+ */
+export const builds = pgTable(
+  "builds",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+
+    /** Free text: "integration", "scaffold", "migration", whatever fits. */
+    kind: text("kind").notNull().default("other"),
+    status: text("status").$type<BuildStatus>().notNull().default("in_progress"),
+
+    targets: jsonb("targets").$type<BuildTarget[]>().notNull().default(sql`'[]'::jsonb`),
+
+    /** Markdown. The agent's account of what it did and what it left alone. */
+    summary: text("summary"),
+
+    /**
+     * Anything else that run produced — a test command and its output, a pull request
+     * URL, files touched. Free-form because an integration and a scaffold do not
+     * produce the same evidence, and a column per possibility would be mostly null.
+     */
+    details: jsonb("details")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("builds_status_idx").on(t.status),
+    index("builds_kind_idx").on(t.kind),
+    // GIN over the targets array, so "which builds touched signoz" is an index lookup
+    // rather than a scan — `targets @> '[{"type":"product","name":"signoz"}]'`.
+    index("builds_targets_idx").using("gin", t.targets),
+  ],
+);
+
 export type Hackathon = typeof hackathons.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Source = typeof sources.$inferSelect;
 export type Chunk = typeof chunks.$inferSelect;
+export type Build = typeof builds.$inferSelect;

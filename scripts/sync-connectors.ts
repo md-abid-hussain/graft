@@ -25,6 +25,17 @@ import "dotenv/config";
 const baseUrl = process.env.TRUEFORGE_BASE_URL ?? "http://localhost:8791";
 const endpoint = new URL("/api/v1/settings/mcp-servers", baseUrl);
 
+/**
+ * A hosted TrueForge runs OIDC; a local one stamps a default user and needs nothing.
+ * Send the ID token when there is one, so the same script targets either.
+ */
+const headers: Record<string, string> = {
+  "content-type": "application/json",
+  ...(process.env.TRUEFORGE_TOKEN
+    ? { Authorization: `Bearer ${process.env.TRUEFORGE_TOKEN}` }
+    : {}),
+};
+
 /** `--dry-run` prints what would be sent, redacted, and writes nothing. */
 const dryRun = process.argv.includes("--dry-run");
 
@@ -142,7 +153,7 @@ for (const [name, connector] of Object.entries(connectors)) {
 
   const res = await fetch(endpoint, {
     method: "PUT",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify({ manifest: connector.manifest() }),
   });
 

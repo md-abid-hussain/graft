@@ -11,3 +11,6 @@ export const AGENT_NAME = process.env.TRUEFORGE_AGENT ?? "graft-learn";
 
 /** Answers questions from the ingested docs; reads the corpus rather than filling it. */
 export const DOC_AGENT_NAME = process.env.TRUEFORGE_DOC_AGENT ?? "graft-recall";
+
+/** Uses the corpus to change a codebase, and publishes what it did. */
+export const BUILD_AGENT_NAME = process.env.TRUEFORGE_BUILD_AGENT ?? "graft-build";

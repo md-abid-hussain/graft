@@ -6,8 +6,9 @@ import { ProductLinks } from "@/components/product-links";
 import { Section } from "@/components/section";
 import { SiteHeader } from "@/components/site-header";
 import { SponsorMark } from "@/components/sponsor-mark";
+import { BUILD_STATUS, buildsForProduct } from "@/lib/builds";
 import { coverageOf, getProduct, type ProductDetail } from "@/lib/products";
-import { safeHref } from "@/lib/utils";
+import { cn, safeHref } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const cover = coverageOf(p);
   const shown = p.sources.slice(0, SOURCE_LIMIT);
+
+  // The point of indexing this product, rather than a property of it: work that named
+  // it as a target. Failing softly because a build is a nice-to-have on this page and
+  // the documentation below is not.
+  const builds = await buildsForProduct(slug).catch(() => []);
 
   return (
     <>
@@ -141,6 +147,34 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </p>
           </Section>
         )}
+
+        {builds.length > 0 ? (
+          <Section title="Built with this" count={builds.length}>
+            <ul className="space-y-2">
+              {builds.map((b) => {
+                const status = BUILD_STATUS[b.status] ?? BUILD_STATUS.in_progress!;
+                return (
+                  <li key={b.slug}>
+                    <Link
+                      href={`/builds/${b.slug}`}
+                      className="flex items-baseline gap-2 rounded-lg border bg-card px-3 py-2 hover:bg-accent"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-sm">{b.title}</span>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium",
+                          status.className,
+                        )}
+                      >
+                        {status.label}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </Section>
+        ) : null}
 
         {p.appearances.length > 0 ? (
           <Section title="Appeared at" count={p.appearances.length}>

@@ -207,3 +207,58 @@ export const PRODUCT_FIELDS = [
   "githubUrl",
   "blogUrl",
 ] as const;
+
+export const buildInput = z.object({
+  build: slug.describe(
+    "Identifier for this piece of work, slugified from what it was — " +
+      "'signoz-into-graft', 'scaffold-otel-starter'. Re-saving the same slug updates " +
+      "in place, which is how a run that reports progress and then reports its result " +
+      "ends up as one record rather than two.",
+  ),
+  title: z.string().min(1).describe("One line a human would recognise it by"),
+  kind: z
+    .string()
+    .min(1)
+    .default("other")
+    .describe(
+      "Free text for the kind of work: 'integration', 'scaffold', 'migration', " +
+        "'fix'. Describe what you did, not what tool you used.",
+    ),
+  // Not `cleared()`: that helper leaves `undefined` alone, which is right for a
+  // hackathon field being edited in isolation but wrong here. Saving a build is
+  // always a full statement of where the work stands, so an omitted status means
+  // "still going" rather than "keep whatever you had".
+  status: s.buildStatus
+    .nullish()
+    .transform((v) => v ?? "in_progress")
+    .describe(
+    "Where it got to. 'proposed' means you finished and something is now waiting on a " +
+      "person — an open pull request, a change to review. 'done' means nothing is " +
+      "owed. 'blocked' means you could not start; 'failed' means you tried and it did " +
+      "not work. Say which honestly: a report claiming success that a reader then " +
+      "disproves costs more than an honest failure.",
+  ),
+  targets: section(s.buildTarget).describe(
+    "What this work was done to — a repository, a product from the index, a URL. A " +
+      "list, because a scaffold touches no repository and a migration may involve two " +
+      "products. Name a product by the slug list_products gives, so the record can be " +
+      "found from that product later.",
+  ),
+  summary: z
+    .string()
+    .nullish()
+    .describe(
+      "Markdown. Your own account of the work: what you changed, what you deliberately " +
+        "left alone, what a reviewer should look at first, and the documentation you " +
+        "worked from. This is the part a person actually reads — write it for them, " +
+        "not as a log.",
+    ),
+  details: z
+    .record(z.string(), z.unknown())
+    .nullish()
+    .describe(
+      "Anything structured worth keeping: a test command and whether it passed, a pull " +
+        "request URL, files touched. Free-form on purpose — an integration and a " +
+        "scaffold do not produce the same evidence.",
+    ),
+});
