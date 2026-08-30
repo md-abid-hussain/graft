@@ -22,7 +22,7 @@ const START = [
   {
     href: "/research",
     label: "Research",
-    hint: "Give an agent a hackathon URL and watch it learn the stack",
+    hint: "Give an agent a hackathon or a product and watch it learn the stack",
     Icon: Telescope,
     primary: true,
   },

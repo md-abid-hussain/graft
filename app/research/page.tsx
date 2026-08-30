@@ -25,7 +25,7 @@ export default function ResearchPage() {
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="text-sm font-medium">Research a hackathon</h1>
+        <h1 className="text-sm font-medium">Research a stack</h1>
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
           {AGENT_NAME}
         </span>

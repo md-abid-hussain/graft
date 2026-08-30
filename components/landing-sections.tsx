@@ -45,16 +45,20 @@ const STACKS = ["Bright Data", "Zerops", "SigNoz", "Cognee", "Kestra", "TrueForg
 export function ProblemSection() {
   return (
     <section className="border-t py-20">
-      <SectionHeading index="01" label="The problem" title="You accumulate. Your agent resets.">
+      <SectionHeading
+        index="01"
+        label="The problem"
+        title="You accumulate. Your agent resets."
+      >
         <p>
-          WeMakeDevs runs a hackathon every few weeks, each built on a different stack.
-          SigNoz for observability. Cognee for agent memory. Zerops for infrastructure.
-          TrueForge for agent harnesses.
+          WeMakeDevs runs a hackathon every few weeks, each built on a different stack. SigNoz
+          for observability. Cognee for agent memory. Zerops for infrastructure. TrueForge for
+          agent harnesses.
         </p>
         <p>
-          You learn one, ship something, and move on. Your coding agent learned it too —
-          and forgot it the moment the session closed. So the next time you reach for that
-          tool, you paste the same documentation into the same chat and start from zero.
+          You learn one, ship something, and move on. Your coding agent learned it too — and
+          forgot it the moment the session closed. So the next time you reach for that tool,
+          you paste the same documentation into the same chat and start from zero.
         </p>
       </SectionHeading>
 
@@ -63,10 +67,7 @@ export function ProblemSection() {
       </p>
       <ul className="mt-3 flex flex-wrap gap-2">
         {STACKS.map((s) => (
-          <li
-            key={s}
-            className="rounded-full border px-3 py-1 text-sm text-muted-foreground"
-          >
+          <li key={s} className="rounded-full border px-3 py-1 text-sm text-muted-foreground">
             {s}
           </li>
         ))}
@@ -83,7 +84,7 @@ const STEPS = [
   {
     n: "01",
     title: "It learns with you",
-    body: "While you work through a hackathon, it reads that stack from its own documentation — the event, its sponsors, their docs — and keeps what it found, cited.",
+    body: "While you work through a hackathon, it reads that stack from its own documentation — the event, its sponsors, their docs — and keeps what it found, cited. Point it at a single product and it does the same for that alone.",
   },
   {
     n: "02",
@@ -106,9 +107,9 @@ export function WhatThisIsSection() {
         title="An agent that learns a stack alongside you and still knows it next month."
       >
         <p>
-          Each hackathon&apos;s stack is read once — the event, its sponsors, their docs
-          and repositories — into a cited index served over MCP. Then it does the wiring,
-          and the credential that can write to GitHub never enters the sandbox.
+          Each hackathon&apos;s stack is read once — the event, its sponsors, their docs and
+          repositories — into a cited index served over MCP. Then it does the wiring, and the
+          credential that can write to GitHub never enters the sandbox.
         </p>
       </SectionHeading>
 
@@ -119,9 +120,7 @@ export function WhatThisIsSection() {
               Step {step.n}
             </p>
             <h3 className="mt-3 font-heading text-base font-semibold">{step.title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-              {step.body}
-            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
           </li>
         ))}
       </ol>
@@ -139,8 +138,8 @@ const READ = [
 ];
 
 const WRITE = [
-  ["save_hackathon", "The hackathon record. Step 1: products reference it."],
-  ["save_product", "A sponsor product, optionally linked to a hackathon."],
+  ["save_hackathon", "The hackathon record, when there is one: products reference it."],
+  ["save_product", "A product, optionally linked to a hackathon."],
   ["ingest_source", "Fetch, chunk, embed and index a batch of doc URLs."],
 ];
 
@@ -168,9 +167,7 @@ function ToolGroup({
         {items.map(([name, purpose]) => (
           <div key={name}>
             <dt className="font-mono text-sm">{name}</dt>
-            <dd className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
-              {purpose}
-            </dd>
+            <dd className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{purpose}</dd>
           </div>
         ))}
       </dl>
@@ -187,12 +184,12 @@ export function McpSection() {
         title="One server. Nine tools, two resources."
       >
         <p>
-          The agents do not each carry their own copy of what has been learned. They read
-          and write one index through a single MCP server at{" "}
-          <code className="font-mono text-sm text-foreground">/api/mcp</code>, with reads
-          and writes together because they are not two audiences: the research agent reads
-          its own output constantly — to check whether a hackathon is already on record
-          before spending an hour re-researching it.
+          The agents do not each carry their own copy of what has been learned. They read and
+          write one index through a single MCP server at{" "}
+          <code className="font-mono text-sm text-foreground">/api/mcp</code>, with reads and
+          writes together because they are not two audiences: the research agent reads its own
+          output constantly — to check whether a hackathon is already on record before spending
+          an hour re-researching it.
         </p>
       </SectionHeading>
 
@@ -201,12 +198,15 @@ export function McpSection() {
         <div>
           <ToolGroup label="Write" note="3 · gated by the harness" items={WRITE} />
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            None of the three declare{" "}
-            <code className="font-mono">readOnlyHint</code>, so the harness holds each one
-            for a human.
+            None of the three declare <code className="font-mono">readOnlyHint</code>, so the
+            harness holds each one for a human.
           </p>
         </div>
-        <ToolGroup label="Resources" note="2 · the same guide, spec-correct" items={RESOURCES} />
+        <ToolGroup
+          label="Resources"
+          note="2 · the same guide, spec-correct"
+          items={RESOURCES}
+        />
       </div>
     </section>
   );
@@ -242,11 +242,7 @@ const HARNESS = [
 export function TrueForgeSection() {
   return (
     <section className="border-t py-20">
-      <SectionHeading
-        index="04"
-        label="How TrueForge is used"
-        title="Not as a model wrapper."
-      >
+      <SectionHeading index="04" label="How TrueForge is used" title="Not as a model wrapper.">
         <p>The harness does work this project would otherwise have to build.</p>
       </SectionHeading>
 
