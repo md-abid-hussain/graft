@@ -4,10 +4,15 @@ import "dotenv/config";
  * Registers the MCP connectors the agents in `trueforge/agents` mount.
  *
  * Unlike `skills.json`, the manifests are in this file rather than in committed JSON,
- * because a connector manifest carries its credential — in a header for GitHub, in the
- * query string for Bright Data and Linkup, which is how those two authenticate. A
- * committed connectors file would be a committed secret. So the shape lives here and
- * the secrets come from `.env`.
+ * because a connector manifest carries its credential. A committed connectors file
+ * would be a committed secret, so the shape lives here and the secrets come from
+ * `.env`.
+ *
+ * Every one of them authenticates with a header. That is deliberate: TrueForge redacts
+ * `auth.headers` when it returns a connector, and does not redact `url`, so a token in
+ * a query string is readable by anything that can reach the settings API. Bright Data
+ * and Linkup both document a query-string form as well; this uses the header form on
+ * purpose.
  *
  * `PUT /api/v1/settings/mcp-servers` is create-or-replace by name and does not run DCR,
  * which is fine: none of these four use OAuth. An OAuth connector would need `POST` to
@@ -56,7 +61,7 @@ const connectors: Record<string, Connector> = {
       name: graftName,
       url: graftUrl,
       description:
-        "Hackathon and sponsor-product corpus. Hybrid retrieval over indexed " +
+        "Product documentation and hackathon corpus. Hybrid retrieval over indexed " +
         "documentation, plus the write path that records hackathons, products, " +
         "documentation sources and cited findings.",
     }),
@@ -82,12 +87,18 @@ const connectors: Record<string, Connector> = {
     manifest: () => ({
       type: "remote",
       name: "brightdata",
-      // Bright Data authenticates on the query string, so the token is in the URL and
-      // a GET of this connector returns it unredacted. Only `auth.headers` is redacted.
-      url: `https://mcp.brightdata.com/sse?token=${process.env.BRIGHTDATA_TOKEN}`,
+      // Streamable HTTP. The /sse endpoint takes the same token and works, but this is
+      // the transport the header form is documented against.
+      url: "https://mcp.brightdata.com/mcp",
       description:
         "Search the web and scrape pages, including sites behind bot protection. " +
         "SERP tools find the blog, repository and socials a hackathon page omits.",
+      auth: {
+        type: "header",
+        // The scheme is not optional. Bright Data answers 401 to a bare token, which is
+        // how the older `bright-data` connector came to be registered and broken.
+        headers: { Authorization: `Bearer ${process.env.BRIGHTDATA_TOKEN}` },
+      },
     }),
   },
 
@@ -96,12 +107,15 @@ const connectors: Record<string, Connector> = {
     manifest: () => ({
       type: "remote",
       name: "linkup",
-      // Same as Bright Data: the key is the query string, not a header.
-      url: `https://mcp.linkup.so/mcp?apiKey=${process.env.LINKUP_API_KEY}`,
+      url: "https://mcp.linkup.so/mcp",
       description:
         "Web search and page fetch with cited answers. linkup-search for real-time " +
         "queries, linkup-research for long-running multi-source synthesis, " +
         "linkup-fetch to extract one page.",
+      auth: {
+        type: "header",
+        headers: { Authorization: `Bearer ${process.env.LINKUP_API_KEY}` },
+      },
     }),
   },
 };

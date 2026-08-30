@@ -41,5 +41,6 @@ resolve the name to an id, and branch.
 
 OAuth connectors cannot be scripted end to end. `PUT` registers them but does not run
 DCR; `GET /api/v1/mcp-servers/{name}/authorize` returns a URL a human has to open. None
-of the four these agents use is one — Bright Data and Linkup authenticate on the query
-string and GitHub with a header — so the whole set syncs without a browser.
+of the four these agents use is one — all four take a static header — so the whole set
+syncs without a browser. Bright Data also publishes an OAuth flow with DCR, which is
+the better answer for a shared deployment and the worse one for a script.
