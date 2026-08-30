@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ResearchSplit } from "@/components/research-split";
+import { GitHubLink } from "@/components/site-header";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AGENT_NAME } from "@/lib/trueforge/client";
 
@@ -35,6 +36,7 @@ export default function ResearchPage() {
           >
             All hackathons
           </Link>
+          <GitHubLink className="max-sm:hidden" />
           <ThemeToggle />
         </div>
       </header>
