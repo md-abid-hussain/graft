@@ -1,16 +1,12 @@
-"use client"
+"use client";
 
-import { useContext, useEffect } from "react"
-import { useTheme } from "next-themes"
-import {
-  Thread,
-  ThreadListContainer,
-  TrueForgeUI,
-} from "@truefoundry/trueforge-ui"
-import { useAuiState } from "@truefoundry/trueforge-ui/assistant-ui"
-import "@truefoundry/trueforge-ui/styles.css"
-import { CHAT_BRAND, CHAT_TOKENS } from "@/components/chat-theme"
-import { ReportSession } from "@/components/session-bridge"
+import { useContext, useEffect } from "react";
+import { useTheme } from "next-themes";
+import { Thread, ThreadListContainer, TrueForgeUI } from "@truefoundry/trueforge-ui";
+import { useAuiState } from "@truefoundry/trueforge-ui/assistant-ui";
+import "@truefoundry/trueforge-ui/styles.css";
+import { CHAT_BRAND, CHAT_TOKENS } from "@/components/chat-theme";
+import { ReportSession } from "@/components/session-bridge";
 
 /**
  * The chat, straight from the harness's own UI SDK.
@@ -25,14 +21,14 @@ import { ReportSession } from "@/components/session-bridge"
 
 /** Publishes the open session upward. `remoteId` is undefined until the first turn. */
 function SessionWatcher() {
-  const report = useContext(ReportSession)
-  const remoteId = useAuiState((s) => s.threadListItem?.remoteId)
+  const report = useContext(ReportSession);
+  const remoteId = useAuiState((s) => s.threadListItem?.remoteId);
 
   useEffect(() => {
-    report(remoteId)
-  }, [remoteId, report])
+    report(remoteId);
+  }, [remoteId, report]);
 
-  return null
+  return null;
 }
 
 /**
@@ -58,7 +54,7 @@ function ChatLayout({ className }: { className?: string }) {
         <Thread />
       </div>
     </div>
-  )
+  );
 }
 
 /** The full-page variant: a wider rail, and no session to report upward. */
@@ -72,7 +68,7 @@ function DocsLayout({ className }: { className?: string }) {
         <Thread />
       </div>
     </div>
-  )
+  );
 }
 
 /**
@@ -82,7 +78,7 @@ function DocsLayout({ className }: { className?: string }) {
  * the affordance rather than hiding a broken one — neither agent does anything with an
  * uploaded file, and the corpus is filled from URLs the agent fetches itself.
  */
-const NoAttachments = () => null
+const NoAttachments = () => null;
 
 /**
  * `full` is the dedicated chat surface at `/docs`. `split` is the compact column beside
@@ -93,13 +89,13 @@ export default function ChatPanelImpl({
   agentName,
   variant = "split",
 }: {
-  agentName: string
-  variant?: "split" | "full"
+  agentName: string;
+  variant?: "split" | "full";
 }) {
   // Controlled from next-themes: the SDK's provider toggles `dark` on
   // document.documentElement, the same element our theme uses, so leaving it
   // uncontrolled lets it flip the whole app.
-  const { resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme();
 
   return (
     <TrueForgeUI
@@ -114,5 +110,5 @@ export default function ChatPanelImpl({
       overrides={{ ComposerLeftSection: NoAttachments }}
       className="h-full min-h-0"
     />
-  )
+  );
 }

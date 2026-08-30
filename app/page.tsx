@@ -120,7 +120,9 @@ export default async function Page() {
         <TrueForgeSection />
 
         <footer className="border-t py-10 text-xs text-muted-foreground">
-          Built for The Agent Harness Hackathon · WeMakeDevs × TrueFoundry × Qodo
+          <Link href="https://www.wemakedevs.org/hackathons/trueforge" target="_blank">
+            Built for The Agent Harness Hackathon · WeMakeDevs × TrueFoundry × Qodo
+          </Link>
         </footer>
       </main>
     </>

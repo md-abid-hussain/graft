@@ -43,12 +43,7 @@ export type DiscoveryMethod = "llms-full" | "llms" | "sitemap" | "crawl" | "manu
  * to tell at a glance whether anything is owed them. `proposed` is the one that matters:
  * the agent finished and something is now waiting on a person.
  */
-export type BuildStatus =
-  | "in_progress"
-  | "proposed"
-  | "done"
-  | "blocked"
-  | "failed";
+export type BuildStatus = "in_progress" | "proposed" | "done" | "blocked" | "failed";
 
 /**
  * What a build worked on.
@@ -135,10 +130,19 @@ export const hackathons = pgTable("hackathons", {
   // what `fetchedAt` being null says.
 
   /** "The challenge" — what makes this problem worth an agent at all. */
-  challenge: jsonb("challenge").$type<TitledItem[]>().notNull().default(sql`'[]'::jsonb`),
+  challenge: jsonb("challenge")
+    .$type<TitledItem[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   /** Every prize category, judged track and open prize alike. */
-  tracks: jsonb("tracks").$type<Track[]>().notNull().default(sql`'[]'::jsonb`),
-  judging: jsonb("judging").$type<TitledItem[]>().notNull().default(sql`'[]'::jsonb`),
+  tracks: jsonb("tracks")
+    .$type<Track[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  judging: jsonb("judging")
+    .$type<TitledItem[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   /** "Project ideas" — worked examples of jobs worth handing to an agent. */
   projectIdeas: jsonb("project_ideas")
     .$type<TitledItem[]>()
@@ -152,9 +156,15 @@ export const hackathons = pgTable("hackathons", {
 
   // Last, matching the page: rules and the submission checklist live on their own
   // subpage rather than the overview.
-  rules: jsonb("rules").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  rules: jsonb("rules")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   /** "What every submission needs" — the checklist a project is disqualified against. */
-  requirements: jsonb("requirements").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  requirements: jsonb("requirements")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
 
   fetchedAt: timestamp("fetched_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -347,7 +357,10 @@ export const builds = pgTable(
     kind: text("kind").notNull().default("other"),
     status: text("status").$type<BuildStatus>().notNull().default("in_progress"),
 
-    targets: jsonb("targets").$type<BuildTarget[]>().notNull().default(sql`'[]'::jsonb`),
+    targets: jsonb("targets")
+      .$type<BuildTarget[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
 
     /** Markdown. The agent's account of what it did and what it left alone. */
     summary: text("summary"),

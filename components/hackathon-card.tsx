@@ -111,8 +111,7 @@ function Coverage({ counts }: { counts: Card["counts"] }) {
 
 function formatWindow(startsAt: Date | null, endsAt: Date | null) {
   if (!startsAt && !endsAt) return null;
-  const fmt = (d: Date) =>
-    d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   if (startsAt && endsAt) return `${fmt(startsAt)} – ${fmt(endsAt)}`;
   return fmt((startsAt ?? endsAt) as Date);
 }

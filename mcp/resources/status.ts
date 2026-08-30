@@ -22,7 +22,9 @@ export function registerStatus(server: McpServer) {
       mimeType: "text/markdown",
     },
     async (uri) => ({
-      contents: [{ uri: uri.href, mimeType: "text/markdown", text: await renderCorpusStatus() }],
+      contents: [
+        { uri: uri.href, mimeType: "text/markdown", text: await renderCorpusStatus() },
+      ],
     }),
   );
 }

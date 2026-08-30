@@ -24,7 +24,10 @@ const MODEL = process.env.EMBEDDING_MODEL ?? "text-embedding-3-large";
  */
 export const EMBEDDING_DIMENSIONS = 1536;
 
-if (process.env.EMBEDDING_DIMENSIONS && Number(process.env.EMBEDDING_DIMENSIONS) !== EMBEDDING_DIMENSIONS) {
+if (
+  process.env.EMBEDDING_DIMENSIONS &&
+  Number(process.env.EMBEDDING_DIMENSIONS) !== EMBEDDING_DIMENSIONS
+) {
   throw new Error(
     `EMBEDDING_DIMENSIONS is ${process.env.EMBEDDING_DIMENSIONS}, but chunks.embedding is ` +
       `vector(${EMBEDDING_DIMENSIONS}). Changing it requires a migration and a full ` +

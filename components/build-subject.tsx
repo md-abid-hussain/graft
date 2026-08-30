@@ -81,8 +81,8 @@ export function BuildSubject({ sessionId }: { sessionId?: string }) {
   if (!sessionId) {
     return (
       <Placeholder icon={<Hammer className="size-5" />} title="Nothing open">
-        Start a chat, name a repository and a library it already knows, and what it
-        builds will appear here.
+        Start a chat, name a repository and a library it already knows, and what it builds will
+        appear here.
       </Placeholder>
     );
   }
@@ -98,8 +98,8 @@ export function BuildSubject({ sessionId }: { sessionId?: string }) {
   if (data.dbDown) {
     return (
       <Placeholder icon={<DatabaseZap className="size-5" />} title="Index unreachable">
-        Postgres is not responding, so the record cannot be read. The run itself is
-        unaffected — start it with <Mono>pnpm db:up</Mono>.
+        Postgres is not responding, so the record cannot be read. The run itself is unaffected
+        — start it with <Mono>pnpm db:up</Mono>.
       </Placeholder>
     );
   }
@@ -117,8 +117,8 @@ export function BuildSubject({ sessionId }: { sessionId?: string }) {
           </>
         ) : (
           <>
-            This fills in when the agent publishes what it did. It records blocked and
-            failed runs too, not only successful ones.
+            This fills in when the agent publishes what it did. It records blocked and failed
+            runs too, not only successful ones.
           </>
         )}
       </Placeholder>
@@ -253,7 +253,7 @@ export function Evidence({ details }: { details: Record<string, unknown> }) {
                           href={u}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex max-w-full items-baseline gap-1 text-sm text-primary [overflow-wrap:anywhere] hover:underline"
+                          className="inline-flex max-w-full items-baseline gap-1 text-sm [overflow-wrap:anywhere] text-primary hover:underline"
                         >
                           <span>{u}</span>
                           <ArrowUpRight className="size-3 shrink-0 self-center" />

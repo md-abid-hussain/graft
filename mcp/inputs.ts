@@ -232,12 +232,12 @@ export const buildInput = z.object({
     .nullish()
     .transform((v) => v ?? "in_progress")
     .describe(
-    "Where it got to. 'proposed' means you finished and something is now waiting on a " +
-      "person — an open pull request, a change to review. 'done' means nothing is " +
-      "owed. 'blocked' means you could not start; 'failed' means you tried and it did " +
-      "not work. Say which honestly: a report claiming success that a reader then " +
-      "disproves costs more than an honest failure.",
-  ),
+      "Where it got to. 'proposed' means you finished and something is now waiting on a " +
+        "person — an open pull request, a change to review. 'done' means nothing is " +
+        "owed. 'blocked' means you could not start; 'failed' means you tried and it did " +
+        "not work. Say which honestly: a report claiming success that a reader then " +
+        "disproves costs more than an honest failure.",
+    ),
   targets: section(s.buildTarget).describe(
     "What this work was done to — a repository, a product from the index, a URL. A " +
       "list, because a scaffold touches no repository and a migration may involve two " +
