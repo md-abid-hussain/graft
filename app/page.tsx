@@ -29,6 +29,9 @@ export default async function Page() {
     // product does not need a hackathon, and deriving the number through the join
     // silently left those out of the headline. `countProducts` rather than
     // `listProducts` — this page renders one integer, not the cards.
+    //
+    // For the same reason the line below is gated on the product count: a corpus with
+    // products and no events still has something to report.
     const [events, productCount] = await Promise.all([listHackathons(), countProducts()]);
     hackathons = events.length;
     tools = productCount;
@@ -52,15 +55,15 @@ export default async function Page() {
 
           <div className="mt-6 max-w-xl space-y-4 text-base leading-relaxed text-muted-foreground">
             <p>
-              You met SigNoz at one hackathon and Cognee at the next. Your coding agent
-              met them too — and forgot both when the session closed. So every time you
-              reach for one again, you paste the same documentation and start over.
+              You met SigNoz at one hackathon and Cognee at the next. Your coding agent met
+              them too — and forgot both when the session closed. So every time you reach for
+              one again, you paste the same documentation and start over.
             </p>
             <p>
-              Graft doesn&apos;t. It reads each stack properly the first time, into an
-              index it keeps. When you need one of them again it already knows it — so it
-              reads your repository, writes the integration in a sandbox, and runs your
-              own test suite against it.
+              Graft doesn&apos;t. It reads each stack properly the first time, into an index it
+              keeps. When you need one of them again it already knows it — so it reads your
+              repository, writes the integration in a sandbox, and runs your own test suite
+              against it.
             </p>
             <p className="text-foreground">You review a diff that already passes.</p>
           </div>
@@ -74,14 +77,19 @@ export default async function Page() {
               href="/research"
               className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}
             >
-              Research a hackathon
+              Research a stack
             </Link>
           </div>
 
-          {hackathons > 0 ? (
+          {tools > 0 ? (
             <p className="mt-6 text-sm text-muted-foreground">
-              <Count n={tools} /> tool{tools === 1 ? "" : "s"} learned across{" "}
-              <Count n={hackathons} /> hackathon{hackathons === 1 ? "" : "s"}.
+              <Count n={tools} /> tool{tools === 1 ? "" : "s"} learned
+              {hackathons > 0 ? (
+                <>
+                  {" \u00b7 "}
+                  <Count n={hackathons} /> hackathon{hackathons === 1 ? "" : "s"} on record
+                </>
+              ) : null}
             </p>
           ) : null}
         </section>

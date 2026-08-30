@@ -11,11 +11,7 @@ import { SubNav } from "./sub-nav";
 export const dynamic = "force-dynamic";
 
 /** The tab should name the hackathon being read, not just the section. */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const h = await getHackathon(slug);
   return h ? { title: h.title, description: h.tagline ?? undefined } : { title: "Not found" };
@@ -50,7 +46,7 @@ export default async function HackathonLayout({
       <SiteHeader />
 
       <div className="border-b">
-        <div className="mx-auto w-full max-w-4xl px-5 pt-10 pb-0">
+        <div className="mx-auto w-full max-w-6xl px-5 pt-10 pb-0 2xl:max-w-7xl">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span
               className={cn(
@@ -60,7 +56,9 @@ export default async function HackathonLayout({
             >
               {h.status}
             </span>
-            {h.mode ? <span className="text-muted-foreground capitalize">{h.mode}</span> : null}
+            {h.mode ? (
+              <span className="text-muted-foreground capitalize">{h.mode}</span>
+            ) : null}
             {h.location ? (
               <span className="inline-flex items-center gap-1 text-muted-foreground">
                 <MapPin className="size-3" />
@@ -127,7 +125,7 @@ export default async function HackathonLayout({
         </div>
       </div>
 
-      <main className="mx-auto w-full max-w-4xl px-5 py-10">{children}</main>
+      <main className="mx-auto w-full max-w-6xl px-5 py-10 2xl:max-w-7xl">{children}</main>
     </>
   );
 }

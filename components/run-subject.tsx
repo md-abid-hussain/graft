@@ -16,10 +16,21 @@ import { cn } from "@/lib/utils";
  * each write clears the approval gate, which is why it polls rather than loading once.
  */
 
+type ProductRecord = {
+  slug: string;
+  name: string;
+  category: string | null;
+  homepageUrl: string | null;
+  chunks: number;
+  state: "indexed" | "pending" | "failed" | "unindexed";
+};
+
 type Payload = {
   slug: string | null;
   hackathon: HackathonDetail | null;
   products: string[];
+  /** Set on a run with no hackathon: the products it stored on their own. */
+  records?: ProductRecord[];
   /** Set when the corpus could not be read — a missing record, not a pending one. */
   dbDown?: boolean;
 };
@@ -62,7 +73,8 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
   if (!sessionId) {
     return (
       <Placeholder icon={<MessageSquare className="size-5" />} title="Nothing open">
-        Start a chat and give the agent a hackathon URL. What it learns will appear here.
+        Start a chat and give the agent a hackathon URL, or a product to learn on its own. What
+        it learns will appear here.
       </Placeholder>
     );
   }
@@ -81,10 +93,16 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
   if (data.dbDown) {
     return (
       <Placeholder icon={<DatabaseZap className="size-5" />} title="Index unreachable">
-        Postgres is not responding, so what this run learned cannot be read. The run
-        itself is unaffected — start it with <Mono>pnpm db:up</Mono>.
+        Postgres is not responding, so what this run learned cannot be read. The run itself is
+        unaffected — start it with <Mono>pnpm db:up</Mono>.
       </Placeholder>
     );
+  }
+
+  // A product researched on its own produces no hackathon record, so an absent one is
+  // not an empty run. Show what did land before falling through to the placeholder.
+  if (!data.hackathon && data.records && data.records.length > 0) {
+    return <ProductsOnly records={data.records} />;
   }
 
   if (!data.hackathon) {
@@ -95,11 +113,11 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
       >
         {data.slug ? (
           <>
-            The agent drafted <Mono>{data.slug}</Mono> but it is not in the index yet.
-            Approve <Mono>save_hackathon</Mono> in the chat and it appears here.
+            The agent drafted <Mono>{data.slug}</Mono> but it is not in the index yet. Approve{" "}
+            <Mono>save_hackathon</Mono> in the chat and it appears here.
           </>
         ) : (
-          <>This fills in as soon as the agent has learned the hackathon.</>
+          <>This fills in as soon as the agent has stored what it learned.</>
         )}
       </Placeholder>
     );
@@ -190,6 +208,70 @@ export function RunSubject({ sessionId }: { sessionId?: string }) {
       </div>
     </div>
   );
+}
+
+/**
+ * A run with no hackathon behind it.
+ *
+ * Same shape as the sponsor list on the hackathon panel, because it is the same
+ * question — what is on record and how much of it is searchable — asked without an
+ * event to hang it from.
+ */
+function ProductsOnly({ records }: { records: ProductRecord[] }) {
+  return (
+    <div className="min-w-0">
+      <header className="border-b px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full bg-primary/12 px-2 py-0.5 font-medium text-primary">
+            Product
+          </span>
+          <Link
+            href="/products"
+            className="ml-auto inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          >
+            All products
+            <ArrowUpRight className="size-3" />
+          </Link>
+        </div>
+        <h2 className="mt-2 font-heading text-xl leading-snug tracking-tight text-balance">
+          {records.length === 1 ? records[0].name : `${records.length} products`}
+        </h2>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          Learned on its own, without a hackathon behind it.
+        </p>
+      </header>
+
+      <div className="px-5 pb-8">
+        <Section title="Stored" count={records.length}>
+          <ul className="space-y-2">
+            {records.map((p) => (
+              <li
+                key={p.slug}
+                className="flex items-start gap-2.5 rounded-xl border bg-card p-3"
+              >
+                <SponsorMark name={p.name} homepageUrl={p.homepageUrl} />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">{p.category}</p>
+                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                    {coverageOf(p)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+/** An unindexed product is a real outcome, not a failure — say so rather than "0". */
+function coverageOf(p: ProductRecord) {
+  if (p.chunks > 0) return `${p.chunks} chunks indexed`;
+  if (p.state === "pending") return "Indexing" + "\u2026";
+  if (p.state === "failed") return "Ingestion failed";
+  return "No documentation indexed";
 }
 
 /** The rest of what landed, as counts — the detail lives on the full page. */
