@@ -25,28 +25,25 @@ export const dynamic = "force-dynamic";
  * more than the database actually holds — and reads zero honestly on a fresh install.
  */
 export default async function Page() {
-  let hackathons = 0;
-  let tools = 0;
-  let runs = 0;
-  try {
-    // Counted from the products table, not from the hackathons' sponsor lists: a
-    // product does not need a hackathon, and deriving the number through the join
-    // silently left those out of the headline. `countProducts` rather than
-    // `listProducts` — this page renders one integer, not the cards.
-    //
-    // For the same reason the line below is gated on the product count: a corpus with
-    // products and no events still has something to report.
-    const [events, productCount, buildCount] = await Promise.all([
-      listHackathons(),
-      countProducts(),
-      countBuilds(),
-    ]);
-    hackathons = events.length;
-    tools = productCount;
-    runs = buildCount;
-  } catch {
-    // The landing page still reads without the index.
-  }
+  // Counted from the products table, not from the hackathons' sponsor lists: a
+  // product does not need a hackathon, and deriving the number through the join
+  // silently left those out of the headline. `countProducts` rather than
+  // `listProducts` — this page renders one integer, not the cards.
+  //
+  // For the same reason the line below is gated on the product count: a corpus with
+  // products and no events still has something to report.
+  //
+  // `allSettled`, because the three metrics are independent: a builds table that is
+  // missing or mid-migration must not zero out a healthy product count. The landing
+  // page still reads with no index at all.
+  const [events, productCount, buildCount] = await Promise.allSettled([
+    listHackathons(),
+    countProducts(),
+    countBuilds(),
+  ]);
+  const hackathons = events.status === "fulfilled" ? events.value.length : 0;
+  const tools = productCount.status === "fulfilled" ? productCount.value : 0;
+  const runs = buildCount.status === "fulfilled" ? buildCount.value : 0;
 
   return (
     <>
