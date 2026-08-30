@@ -36,7 +36,9 @@ export function ProductCard({ product: p }: { product: Card }) {
           <SponsorMark name={p.name} homepageUrl={p.homepageUrl} className="size-8" />
           <div className="min-w-0 flex-1">
             <h2 className="font-heading text-lg leading-snug font-semibold text-balance">
-              {p.name}
+              <Link href={`/products/${p.slug}`} className="hover:underline">
+                {p.name}
+              </Link>
             </h2>
             {/* Company sits with the category rather than in the heading: a long one
                 wrapped mid-title and pushed everything below it down a line. */}
@@ -75,8 +77,8 @@ export function ProductCard({ product: p }: { product: Card }) {
           ) : null}
           {p.sources.indexed > 0 ? (
             <span className="text-muted-foreground tabular-nums">
-              <span className="font-semibold text-foreground">{p.sources.indexed}</span>{" "}
-              source{p.sources.indexed === 1 ? "" : "s"}
+              <span className="font-semibold text-foreground">{p.sources.indexed}</span> source
+              {p.sources.indexed === 1 ? "" : "s"}
             </span>
           ) : null}
           <Route product={p} />
