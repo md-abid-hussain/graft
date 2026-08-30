@@ -18,11 +18,15 @@ export function registerIngestSource(server: McpServer) {
         "a multi-megabyte documentation file to paste it in here spends your entire " +
         "context doing badly what the pipeline does well, and skips the content hashing " +
         "that makes a re-run take milliseconds instead of minutes.\n\n" +
-        "**Send them all in one call.** `urls` is a list, and every call to this tool " +
-        "stops for human approval — so indexing fifty pages one at a time asks a person " +
-        "to click fifty times. Collect the URLs first, then make one call. They are " +
-        "fetched concurrently, and each becomes its own source with its own content " +
-        "hash, so a later re-run only re-embeds the pages that actually changed.\n\n" +
+        "**One call per product.** `urls` is a list, and every URL in it is indexed " +
+        "against the single `product` this call names. Batch a product's pages together " +
+        "— each call stops for human approval, so fifty pages one at a time asks a " +
+        "person to click fifty times — but never mix two products in one call: their " +
+        "docs would be stored under whichever product you named, and `search_docs` " +
+        "filters on exactly that, so the rest become unfindable. Two products means two " +
+        "calls. Within a call the URLs are fetched concurrently and each becomes its " +
+        "own source with its own content hash, so a re-run only re-embeds what " +
+        "changed.\n\n" +
         "**Prefer llms-full.txt where it exists** — it is one URL for a whole docs set. " +
         "Do not pass llms.txt: it is an index of links, so indexing it produces chunks " +
         "that are nothing but link lists, which match queries confidently and answer " +

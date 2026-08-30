@@ -119,10 +119,24 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   const sourceId = sourceIdFor(opts.url);
 
   log(`fetching ${opts.url}`);
-  const res = await fetch(opts.url, {
-    headers: { "user-agent": "Graft/0.1 (+https://github.com/md-abid-hussain/graft)" },
-    signal: AbortSignal.timeout(60_000),
-  });
+
+  // A rejected fetch — DNS, connection refused, the 60s timeout — used to escape
+  // before anything was recorded, so a batch could report a URL as failed while the
+  // corpus held no trace of it. An HTTP error a line below left a row; a dead host
+  // left nothing, which is the same outcome for the operator and a different one for
+  // the database.
+  let res: Response;
+  try {
+    res = await fetch(opts.url, {
+      headers: { "user-agent": "Graft/0.1 (+https://github.com/md-abid-hussain/graft)" },
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await markFailed(sourceId, opts, `fetch failed: ${message}`);
+    throw new Error(`fetch failed for ${opts.url}: ${message}`);
+  }
+
   if (!res.ok) {
     await markFailed(sourceId, opts, `HTTP ${res.status}`);
     throw new Error(`fetch failed: HTTP ${res.status} for ${opts.url}`);
@@ -135,7 +149,7 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   // project refuses for llms.txt: entries that match a query confidently and answer
   // nothing. Worse since ingestion went batched — one URL missing its `.md` across a
   // fifty-page walk would poison the set silently.
-  const html = htmlReason(res, text);
+  const html = htmlReason(text);
   if (html) {
     await markFailed(sourceId, opts, html);
     throw new Error(`${opts.url} ${html}`);
@@ -336,38 +350,33 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
 }
 
 /**
- * Is this markup rather than prose, and how do we know?
+ * Is this markup rather than prose?
  *
- * Two independent signals, because either alone is wrong often enough to matter. The
- * `content-type` header is authoritative when a server sets it honestly, but plenty
- * serve markdown as `text/html` or omit the header entirely. Sniffing the opening of
- * the body catches those — and is deliberately anchored to the start, since a genuine
- * markdown file may well contain an inline `<img>` or a `<details>` block halfway down
- * and must not be refused for it.
+ * Decided from the body alone. `content-type` is not consulted, because it is wrong
+ * too often in the direction that matters: plenty of sites serve perfectly good
+ * markdown as `text/html`, and refusing on the header would reject exactly the
+ * page-by-page docs this pipeline exists to index.
+ *
+ * The test looks for whole-page markers — a doctype, `<html>`, `<head>`, `<body>`, an
+ * XML prolog — anywhere in the opening, rather than for a tag at position zero. That
+ * distinction is the point: markdown legitimately opens with a `<div>`, a `<span>` or
+ * an inline `<img>`, and none of those appear in a document that also declares itself
+ * a whole HTML page.
  *
  * The message names the fix, because the caller is an agent that can act on it: nearly
- * every docs site that serves HTML at a path serves markdown at a neighbouring one.
+ * every docs site serving HTML at a path serves markdown at a neighbouring one.
  */
-function htmlReason(res: Response, text: string): string | null {
-  const declared = (res.headers.get("content-type") ?? "").toLowerCase();
-  const head = text.slice(0, 512).trimStart().toLowerCase();
-  const looksLikeMarkup = /^(<!doctype\s+html|<html[\s>]|<\?xml|<head[\s>])/.test(head);
+function htmlReason(text: string): string | null {
+  const head = text.slice(0, 2048).toLowerCase();
+  const isWholePage = /<!doctype\s+html|<html[\s>]|<head[\s>]|<body[\s>]|<\?xml[\s?]/.test(head);
+  if (!isWholePage) return null;
 
-  // A trustworthy `text/markdown` or `text/plain` overrides the sniff: some markdown
-  // legitimately opens with an HTML block, and the server said what it was.
-  const declaredText = declared.includes("text/markdown") || declared.includes("text/plain");
-  if (declaredText && !looksLikeMarkup) return null;
-
-  if (looksLikeMarkup || (declared.includes("text/html") && !declaredText)) {
-    return (
-      "returned HTML, not markdown — this pipeline indexes markdown only, and " +
-      "chunking markup produces entries that match queries and answer nothing. Most " +
-      "docs sites serve a markdown twin: try appending `.md` to the page URL, or " +
-      "request it with `Accept: text/markdown`, or use the product's llms-full.txt."
-    );
-  }
-
-  return null;
+  return (
+    "returned HTML, not markdown — this pipeline indexes markdown only, and " +
+    "chunking markup produces entries that match queries and answer nothing. Most " +
+    "docs sites serve a markdown twin: try appending `.md` to the page URL, or " +
+    "request it with `Accept: text/markdown`, or use the product's llms-full.txt."
+  );
 }
 
 /** The first real H1, ignoring anything inside a fence. */
@@ -467,7 +476,33 @@ export async function ingestSources(
   };
 }
 
+/**
+ * Record that a source could not be ingested.
+ *
+ * A source that is already `indexed` is never downgraded. Its chunks are still in the
+ * table and still answering queries, so a transient 404 or a DNS blip on a re-run must
+ * not leave the product reading "failed" while retrieval works perfectly. The error is
+ * still recorded — that is the useful half — but the status keeps describing the
+ * chunks, which is what it is for.
+ *
+ * This matters more now that ingestion is batched: one flaky host in a fifty-URL
+ * re-run would otherwise mark a working source broken.
+ */
 async function markFailed(sourceId: string, opts: IngestOptions, error: string) {
+  const [existing] = await db
+    .select({ status: schema.sources.status })
+    .from(schema.sources)
+    .where(eq(schema.sources.id, sourceId))
+    .limit(1);
+
+  if (existing?.status === "indexed") {
+    await db
+      .update(schema.sources)
+      .set({ error, fetchedAt: new Date() })
+      .where(eq(schema.sources.id, sourceId));
+    return;
+  }
+
   await db
     .insert(schema.sources)
     .values({

@@ -13,6 +13,19 @@ import { chunks, hackathonProducts, hackathons, products, sources } from "@/lib/
  * was queryable over MCP but invisible in the app.
  */
 
+/**
+ * How many products are on record.
+ *
+ * Separate from `listProducts` because the landing page wants one integer, and that
+ * function loads every product, source and hackathon link plus a grouped scan of the
+ * whole chunks table to build cards nobody is rendering there. The landing page is
+ * `force-dynamic`, so it would pay that on every request.
+ */
+export async function countProducts(): Promise<number> {
+  const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(products);
+  return row?.n ?? 0;
+}
+
 /** Chunks are counted from `chunks`, not `sources.chunk_count`, so the number is what
  *  retrieval can actually return rather than what ingestion reported. */
 export async function listProducts() {

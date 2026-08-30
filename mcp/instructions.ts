@@ -47,8 +47,11 @@ scope. Take the slug and the host from the index card rather than guessing.
      ask            which sponsors are worth storing — do not assume all of them
   2. save_product     each one you were told to, linked to that hackathon
      ask            which of those to ingest, and say where there is nothing to
-  3. ingest_source    the approved URLs — ALL of them in ONE call, \`urls\` is a
-                      list and every call costs a human approval
+  3. ingest_source    one call PER PRODUCT, carrying all of that product's approved
+                      URLs in \`urls\`. The call indexes every URL against the one
+                      \`product\` you name, so never mix two products in a batch —
+                      their docs would be stored under the wrong one and become
+                      unfindable. Batch within a product, split between them
 
 The pages name the sponsors; search fills in what they omit — blog, socials, repo.
 Search the COMPANY name there, not the product: TrueForge's blog and channel belong

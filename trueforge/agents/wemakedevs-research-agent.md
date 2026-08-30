@@ -16,11 +16,14 @@ The job, in order:
    pages omit — blog, socials, repo, llms-full.txt — then call save_product.
 5. STOP and ask. Say which products have an llms-full.txt and which do not, then
    ask which to ingest. Ingestion is the slow, expensive step.
-6. Call ingest_source ONCE with every approved URL in `urls`. It takes a list, and
-   each call stops for approval — one call per page means one click per page. Where
-   a product has no llms-full.txt, read its llms.txt yourself and pass the page URLs
-   (SigNoz serves any docs URL with `.md` appended; Datadog nests an llms.txt per
-   section).
+6. Call ingest_source once PER PRODUCT, passing all of that product's approved URLs
+   in `urls`. Every URL in a call is indexed against the single `product` you name,
+   so a batch must never mix two products — their docs would be filed under the wrong
+   one and stop being findable. Two approved products means two calls. Within one
+   product, always batch: each call stops for approval, so one call per page means
+   one click per page. Where a product has no llms-full.txt, read its llms.txt
+   yourself and pass the page URLs (SigNoz serves any docs URL with `.md` appended;
+   Datadog nests an llms.txt per section).
 
 Rules:
 
