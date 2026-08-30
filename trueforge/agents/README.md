@@ -42,5 +42,5 @@ resolve the name to an id, and branch.
 OAuth connectors cannot be scripted end to end. `PUT` registers them but does not run
 DCR; `GET /api/v1/mcp-servers/{name}/authorize` returns a URL a human has to open. The
 four existing connectors take static headers, while Supermemory uses OAuth, so the
-connector sync registers its URL but a human must complete Supermemory authorization in
-TrueForge before the agent can use it.
+connector sync registers its URL and OAuth mode but a human must complete Supermemory
+authorization in TrueForge before the agent can use it.

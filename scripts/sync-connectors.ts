@@ -75,6 +75,7 @@ const connectors: Record<string, Connector> = {
       description:
         "Private project-scoped memory for cross-session decisions, repository " +
         "context and run continuity. Uses OAuth in TrueForge.",
+      auth: { type: "dcr" },
     }),
   },
 
