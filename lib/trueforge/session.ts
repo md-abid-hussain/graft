@@ -19,21 +19,25 @@ const BASE = process.env.TRUEFORGE_BASE_URL ?? "http://localhost:8791";
 const EVENT_LIMIT = 100;
 
 /**
- * How deep to page before giving up.
- *
- * Newest-first, and writes land late in a run, so the first page usually answers it.
- * The ceiling exists so a pathological session cannot hold a request open indefinitely
- * — not because three pages is known to be enough.
- *
- * A build needs more headroom than research does. Research stops the moment it finds
- * its hackathon, and a hackathon is written early, so the scan is short by construction.
- * A build is published at the END of the work — but the conversation frequently carries
- * on afterwards, and every follow-up turn pushes that `save_build` further down the
- * stream. Capping the build scan at 300 events made a long session report "nothing
- * published yet" for a record that exists, which is worse than slow.
+ * Research stops the moment it finds its hackathon, and a hackathon is written early in
+ * a run, so this is a cost ceiling on a scan that has almost always already finished.
  */
 const MAX_PAGES = 3;
-const MAX_PAGES_FOR_BUILD = 12;
+
+/**
+ * A build has no early marker to stop on.
+ *
+ * It is published at the END of the work, so on a newest-first stream it is usually
+ * seen first — but "usually" is not a correctness argument. Every turn the user takes
+ * after the publish pushes that `save_build` further down, and a scan that gives up at
+ * a fixed depth reports "nothing published yet" for a record that plainly exists.
+ *
+ * So the build scan runs until it finds the build or the events run out. This number is
+ * a runaway guard — a session cannot hold a request open forever — and deliberately far
+ * above any depth that should ever be reached. It is not a claim that ten thousand
+ * events is enough, which is exactly the claim three pages was making.
+ */
+const MAX_PAGES_FOR_BUILD = 100;
 
 interface WireToolCall {
   function?: { name?: string; arguments?: string };
@@ -61,13 +65,14 @@ export async function subjectOf(
   sessionId: string,
   { forBuild = false }: { forBuild?: boolean } = {},
 ): Promise<SessionSubject> {
-  const wantBuild = forBuild;
   let hackathon: string | null = null;
   let build: string | null = null;
   const products = new Set<string>();
   let pageToken: string | undefined;
 
-  for (let page = 0; page < MAX_PAGES_FOR_BUILD; page++) {
+  const maxPages = forBuild ? MAX_PAGES_FOR_BUILD : MAX_PAGES;
+
+  for (let page = 0; page < maxPages; page++) {
     const query = new URLSearchParams({ limit: String(EVENT_LIMIT) });
     if (pageToken) query.set("page_token", pageToken);
 
@@ -89,16 +94,13 @@ export async function subjectOf(
     scan(body.data ?? []);
 
     pageToken = body.pagination?.next_page_token;
+    if (!pageToken) break;
 
-    // The hackathon is written before its products, so once it is found everything
-    // after it on the newest-first stream has already been seen — stop.
-    //
-    // A build has no such marker. It is written last, so it is usually seen first, but
-    // "usually" is not a correctness argument: anything the user asked afterwards sits
-    // on top of it. So the scan only stops early once the build is actually found, and
-    // otherwise runs to the deeper ceiling.
-    if (!pageToken || hackathon || build) break;
-    if (page + 1 >= (wantBuild ? MAX_PAGES_FOR_BUILD : MAX_PAGES)) break;
+    // Stop on what THIS call came for, not on whatever turned up first. A research
+    // scan that stopped because it saw a build would abandon the hackathon it was
+    // actually asked for — the two panels read the same subject but are not looking
+    // for the same thing.
+    if (forBuild ? build : hackathon) break;
   }
 
   return { hackathon, products: [...products], build };

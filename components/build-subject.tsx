@@ -38,25 +38,43 @@ export function BuildSubject({ sessionId }: { sessionId?: string }) {
 
   // Keyed on the session by its parent, so switching conversations remounts this and
   // no stale record has to be cleared out from inside the effect.
+  //
+  // Self-scheduling rather than an interval, because the two outcomes cost very
+  // different amounts. Finding the build stops the server's scan on the first page;
+  // NOT finding it walks back through the whole session before it can say so. A tab
+  // left open on a conversation that never publishes would otherwise pay that walk
+  // every four seconds forever, so an unproductive poll backs off.
   useEffect(() => {
     if (!sessionId) return;
 
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let empty = 0;
+
     const load = async () => {
+      let found = false;
       try {
         const res = await fetch(`/api/session/${sessionId}/build`, { cache: "no-store" });
-        if (!res.ok || cancelled) return;
-        setData((await res.json()) as Payload);
+        if (res.ok && !cancelled) {
+          const next = (await res.json()) as Payload;
+          setData(next);
+          found = Boolean(next.build);
+        }
       } catch {
         // A dropped poll is not worth surfacing; the next one will land.
       }
+      if (cancelled) return;
+
+      empty = found ? 0 : empty + 1;
+      // Keep watching after it lands: a run publishes `in_progress` and re-saves the
+      // result, so the record still changes under us.
+      timer = setTimeout(load, found ? 10_000 : empty > 15 ? 20_000 : 4_000);
     };
 
     void load();
-    const timer = setInterval(load, 4000);
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      clearTimeout(timer);
     };
   }, [sessionId]);
 
