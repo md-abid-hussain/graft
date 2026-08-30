@@ -14,6 +14,17 @@ import { readFile } from "node:fs/promises";
 const baseUrl = process.env.TRUEFORGE_BASE_URL ?? "http://localhost:8791";
 const endpoint = new URL("/api/v1/settings/skills", baseUrl);
 
+/**
+ * A hosted TrueForge runs OIDC; a local one stamps a default user and needs nothing.
+ * Send the ID token when there is one, so the same script targets either.
+ */
+const headers: Record<string, string> = {
+  "content-type": "application/json",
+  ...(process.env.TRUEFORGE_TOKEN
+    ? { Authorization: `Bearer ${process.env.TRUEFORGE_TOKEN}` }
+    : {}),
+};
+
 const manifests: unknown[] = JSON.parse(
   await readFile(new URL("../skills/skills.json", import.meta.url), "utf8"),
 );
@@ -24,7 +35,7 @@ for (const manifest of manifests) {
   const name = (manifest as { name: string }).name;
   const res = await fetch(endpoint, {
     method: "PUT",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify({ manifest }),
   });
 
