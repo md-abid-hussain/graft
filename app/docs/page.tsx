@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ChatPanel } from "@/components/chat-panel";
+import { GitHubLink } from "@/components/site-header";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DOC_AGENT_NAME } from "@/lib/trueforge/client";
 
@@ -36,6 +37,7 @@ export default function DocsChatPage() {
           >
             Research
           </Link>
+          <GitHubLink className="max-sm:hidden" />
           <ThemeToggle />
         </div>
       </header>

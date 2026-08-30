@@ -12,6 +12,28 @@ const NAV = [
 
 const REPO = "https://github.com/md-abid-hussain/graft";
 
+/**
+ * The repo link, shared by all three headers.
+ *
+ * `/research` and `/docs` do not use `SiteHeader` — a full-height chat surface has no
+ * room for it — so without this they had no way back to the source at all.
+ */
+export function GitHubLink({ className }: { className?: string }) {
+  return (
+    <a
+      href={REPO}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(
+        "font-mono text-xs text-muted-foreground transition-colors hover:text-foreground",
+        className,
+      )}
+    >
+      GitHub
+    </a>
+  );
+}
+
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
@@ -37,14 +59,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
-          <a
-            href={REPO}
-            target="_blank"
-            rel="noreferrer"
-            className="hidden font-mono text-xs text-muted-foreground transition-colors hover:text-foreground sm:block"
-          >
-            GitHub
-          </a>
+          <GitHubLink className="max-sm:hidden" />
           <ThemeToggle />
           <Link
             href="/hackathons"
