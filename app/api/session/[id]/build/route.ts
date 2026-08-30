@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
 
-  const subject = await subjectOf(id);
+  const subject = await subjectOf(id, { forBuild: true });
   if (!subject.build) return NextResponse.json({ slug: null, build: null });
 
   try {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { url } from "./shared";
+import { slug, url } from "./shared";
 
 /**
  * The contract — one field name per column, everywhere.
@@ -267,15 +267,27 @@ export const searchHit = z.object({
  */
 export const buildStatus = z.enum(["in_progress", "proposed", "done", "blocked", "failed"]);
 
-export const buildTarget = z.object({
-  type: z.enum(["repository", "product", "url", "other"]),
-  name: z
-    .string()
-    .min(1)
-    .describe("The identifier a reader recognises — 'owner/repo', or a product slug"),
-  url: z.httpUrl().nullish(),
-  note: z.string().nullish().describe("What was done to this one, in a few words"),
-});
+export const buildTarget = z
+  .object({
+    type: z.enum(["repository", "product", "url", "other"]),
+    name: z
+      .string()
+      .min(1)
+      .describe("The identifier a reader recognises — 'owner/repo', or a product slug"),
+    url: z.httpUrl().nullish(),
+    note: z.string().nullish().describe("What was done to this one, in a few words"),
+  })
+  // A `product` target is not a label, it is a key: the record links to
+  // /products/<name> and a product's page finds its builds by matching this value.
+  // A display name or a path fragment breaks both, silently and in a way nobody sees
+  // until they click. Every other type is free text, because a repository is
+  // `owner/repo` and an `other` is whatever the agent needs it to be.
+  .refine((t) => t.type !== "product" || slug.safeParse(t.name).success, {
+    path: ["name"],
+    message:
+      "a product target must be the slug from list_products — lowercase letters, " +
+      "digits and hyphens, e.g. 'signoz', not 'SigNoz' and not a URL",
+  });
 
 export const buildSummary = z.object({
   build: z.string(),

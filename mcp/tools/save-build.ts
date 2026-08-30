@@ -37,7 +37,7 @@ export function registerSaveBuild(server: McpServer) {
         build: z.string(),
         created: z.boolean(),
         status: z.string(),
-        targets: z.number().int(),
+        targets: z.number().int().nullable(),
         updatedAt: z.string().nullable(),
       }),
       annotations: WRITE,
@@ -54,14 +54,21 @@ export function registerSaveBuild(server: McpServer) {
       const id = idOf("bld", input.build, existing?.id);
       const now = new Date();
 
-      // Nulls are normalised to the column's own empty value rather than passed
-      // through: `targets` and `details` are NOT NULL with a default, and a literal
-      // null would reach Postgres as a constraint violation the agent cannot act on.
+      // The omit/preserve contract, applied per field: an omitted key leaves the
+      // stored value alone, an explicit null clears it. `section()` and the nullish
+      // schemas already turn null into the column's own empty value — [] and {} —
+      // because these columns are NOT NULL with a default and a literal null would
+      // reach Postgres as a constraint violation the agent cannot act on.
+      //
+      // `targets` has to be guarded like the other two. Writing `input.targets ?? []`
+      // unconditionally meant the progress-then-result flow this tool documents —
+      // save once as in_progress, save again at the end — silently erased every
+      // repository and product the first call recorded.
       const fields = {
         title: input.title,
         kind: input.kind,
         status: input.status,
-        targets: input.targets ?? [],
+        ...(input.targets !== undefined && { targets: input.targets }),
         ...(input.summary !== undefined && { summary: input.summary ?? null }),
         ...(input.details !== undefined && { details: input.details ?? {} }),
         updatedAt: now,
@@ -80,7 +87,7 @@ export function registerSaveBuild(server: McpServer) {
         build: input.build,
         created: !existing,
         status: input.status,
-        targets: (input.targets ?? []).length,
+        targets: input.targets?.length ?? null,
         updatedAt: iso(now),
       });
     },
