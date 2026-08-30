@@ -53,7 +53,7 @@ export default async function Page() {
         <section className="py-16 sm:py-24 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-center lg:gap-16">
           <div>
             <p className="font-mono text-xs tracking-widest text-primary uppercase">
-              An agent memory on the TrueForge harness
+              Agents that learn your stack — on the TrueForge harness
             </p>
 
             <h1 className="mt-4 max-w-3xl font-heading text-4xl leading-[1.1] sm:text-5xl">
