@@ -13,9 +13,10 @@ WeMakeDevs runs a hackathon every few weeks, each built on a different stack. Si
 observability. Cognee for agent memory. Zerops for infrastructure. TrueForge for agent
 harnesses.
 
-You learn one, ship something, and move on. Your coding agent learned it too — and forgot
-it the moment the session closed. So the next time you reach for that tool, you paste the
-same documentation into the same chat and start from zero.
+You learn one, ship something, and move on. Your agent learned it too — and forgot
+it the moment the session closed. So the first day of every hackathon is the same day:
+the agent searches, fetches, and re-understands documentation that was understood a
+month ago, and the context it builds dies with the session that built it.
 
 You accumulate. Your agent resets, every single time.
 
@@ -30,20 +31,79 @@ it found, cited.
 **It remembers.** The next hackathon does not start from zero. What it learned in March is
 still there in June, and it never re-reads a page it has already indexed.
 
-**It builds with you.** Ask it to add something it knows to a project. It reads your
-repository, writes the change **in a sandbox**, runs **your** test suite against it, and
-opens a pull request.
+**It builds with you.** Ask it to put what it knows to work on a repository. It reads
+the target, writes the change **in a sandbox**, runs **your** test suite against it, and
+opens a pull request — then records the run, so the next person finds the attempt
+instead of repeating it.
 
 You review a diff that already passes. Nothing reaches your repository until you approve
 it — and the credential that can write to GitHub never enters the sandbox.
 
-## The agents
+None of this is hypothetical. `/builds` already holds two runs: an
+issue-triage pass over this repository's own tracker, closing issues that merged PRs had
+already addressed, and a Supermemory MCP integration — opened as a pull request and
+remediated against Qodo's review findings by the agent itself.
 
-| Agent          | Job                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| `graft-learn`  | Reads a hackathon and its sponsors, or a product on its own, asking before it stores anything |
-| `graft-recall` | Answers questions from the indexed documentation, with citations                              |
-| `graft-build`  | Does work with what the index knows — sandboxed, published as a record, writes gated          |
+The knowledge is carried forward, not consumed. SigNoz stays observability and Cognee
+stays agent memory whichever event runs next, and a product that never sponsored
+anything is indexed the same way. The overlap with this project's own toolchain is
+deliberate: Zerops is in the index _and_ under the deployment; the research agent's
+discovery runs on Bright Data. Sponsor tools, doing the work here.
+
+All three agents are TrueForge agents. Every gate, sandbox, skill and subagent below
+is the harness's — [How TrueForge is used](#how-trueforge-is-used) is the whole of that
+argument.
+
+## Three agents, one contract
+
+An agent's capability here is not written in its prompt — it is defined by what it
+mounts. Each agent is a thin instruction file over a set of MCP connectors and skills,
+and everything it can do is what those tools compose into. The contract they all drive
+is the same one: the ten typed tools of [the Graft MCP server](#how-the-agents-share-a-memory).
+
+### `graft-learn` — research
+
+**Mounts:** Bright Data + Linkup for the web, the full Graft contract for the store.
+**Skill:** `graft-research`.
+
+> discover — SERP, sitemaps, `llms-full.txt` —
+> `save_hackathon` **⏸** — _ask which sponsors matter_ — `save_product` **⏸** —
+> _ask what to ingest_ — `ingest_source` **⏸** one call per product
+
+It finds the pages itself and sends **facts and URLs, never content** — the server
+fetches, chunks and embeds. Every write pauses at the harness's approval gate, and
+twice it stops entirely, because which sponsors matter and what is worth the cost of
+ingestion are decisions only the human gets to make.
+
+### `graft-recall` — answer
+
+**Mounts:** the Graft contract, nothing else. **Skill:** `graft-docs-lookup`.
+
+> `list_products` / `list_hackathons` for slugs — `search_docs`, whole questions,
+> one product per call — cited answer, or an honest "not indexed"
+
+It reads only the contract: no web access, no memory of how a library behaves, no
+guessed slugs. Every claim carries the URL it came from, and a gap in the index is
+reported as a gap — which is what makes its answers checkable.
+
+### `graft-build` — act
+
+**Mounts:** the Graft contract plus `save_build`, GitHub (PRs, issues, reviews), Linkup.
+**Skills:** `graft-library-integration`, `graft-docs-lookup`.
+
+> `search_docs` first — web fallback, disclosed as such — sandbox: clone, change,
+> run the target's own tests — propose via GitHub **⏸** — `save_build`, either way
+
+Integrate a library, triage issues, remediate a review's findings — whatever its
+tools compose into. The work happens in a self-hosted Daytona sandbox with Docker
+inside it, so a change is proven against the target's own test suite before anything
+is proposed; the GitHub credential never enters that sandbox. And the run is recorded
+through the contract whichever way it went, because a blocked attempt written down is
+worth an hour to the next person.
+
+**The loop closes.** `graft-learn` writes what `graft-recall` reads; `graft-build`
+reads both and writes back what it did. The corpus compounds instead of resetting —
+that is the difference between a memory and a cache.
 
 Their specs live in [`trueforge/agents/`](trueforge/agents) — model, tool mounts and
 instructions as files, so a change to how an agent behaves arrives as a pull request
@@ -51,13 +111,13 @@ rather than as someone's browser state.
 
 ## Status
 
-|                                                                         | State           |
-| ----------------------------------------------------------------------- | --------------- |
-| Research agent — a hackathon or a lone product in, approved records out | **working**     |
-| Docs agent — questions answered from indexed documentation              | **working**     |
-| Shared memory — Postgres + pgvector, hybrid retrieval, served over MCP  | **working**     |
-| Web app — see what it knows, research a stack, ask it                   | **working**     |
-| Integration agent — repo in, sandboxed change out, pull request gated   | **in progress** |
+|                                                                               | State       |
+| ----------------------------------------------------------------------------- | ----------- |
+| Research agent — a hackathon or a lone product in, approved records out       | **working** |
+| Docs agent — questions answered from indexed documentation                    | **working** |
+| Shared memory — Postgres + pgvector, hybrid retrieval, served over MCP        | **working** |
+| Web app — see what it knows, research a stack, ask it                         | **working** |
+| Build agent — repo in, sandboxed change out, pull request gated, run recorded | **working** |
 
 ## Quickstart
 
@@ -79,6 +139,7 @@ Then open:
 | `/hackathons` | What it knows — overview, rules, schedule, resources                                     |
 | `/research`   | Research a hackathon or a single product, with what it learned appearing beside the chat |
 | `/docs`       | Ask questions against the indexed documentation                                          |
+| `/products`   | Every product on record — indexed sources, failures included, and direct corpus search   |
 | `/build`      | Build with what it knows — a library into a repository, published as a record            |
 | `/builds`     | Every piece of work it has done, including the ones that did not work                    |
 
@@ -107,12 +168,12 @@ an hour re-researching it.
 
 **Write** — no `readOnlyHint`, so the harness gates them
 
-| Tool             | Purpose                                                           |
-| ---------------- | ----------------------------------------------------------------- |
-| `save_hackathon` | The hackathon record. Step 1: products reference it               |
-| `save_product`   | A sponsor product, optionally linked to a hackathon               |
-| `ingest_source`  | Fetch, chunk, embed and index a batch of doc URLs in one approval |
-| `save_build`     | Record a piece of work an agent did — the only tool that writes what it *did*, not what it read |
+| Tool             | Purpose                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| `save_hackathon` | The hackathon record. Step 1: products reference it                                             |
+| `save_product`   | A product, optionally linked to a hackathon                                                     |
+| `ingest_source`  | Fetch, chunk, embed and index a batch of doc URLs in one approval                               |
+| `save_build`     | Record a piece of work an agent did — the only tool that writes what it _did_, not what it read |
 
 **Resources** — the same guide the `how_to_use` tool returns, served the spec-correct way
 as well. Exposed twice on purpose: plenty of MCP clients read only `tools/list` and never
@@ -151,12 +212,21 @@ when the corpus cannot answer, because refusing to act on an unindexed library h
 nobody. But the order is fixed and it says which it used: index first, then an explicit
 "this is not indexed", then the web, then a note on what to ingest so the next run is
 free. The failure worth guarding against is not a wrong answer — it is reaching for the
-web *first*, because that works, nobody notices, and the corpus quietly stops being the
+web _first_, because that works, nobody notices, and the corpus quietly stops being the
 thing the project is built on.
 
 ## How TrueForge is used
 
-Not as a model wrapper. The harness does work this project would otherwise have to build:
+Not as a model wrapper. An agent that _acts_ needs a runtime nobody builds well in a
+week: tool connections that authenticate, subagent delegation, a sandbox that runs
+untrusted code, skills mounted from git, context that survives compaction, and more
+than one model provider behind one contract. TrueForge is that runtime. The agents in
+this repo are deliberately thin on top of it — three instruction files and their
+mounts — and the store is wired to the harness the same way: one MCP server is the
+entire contract between TrueForge and the database, ten typed tools the harness can
+gate, discover, and approve like any others.
+
+What the harness does that this project did not have to build:
 
 - **Human approval before anything irreversible.**
   `require_approval_for_tools: ["@write", "@destructive"]` gates every write to the index,
@@ -166,10 +236,21 @@ Not as a model wrapper. The harness does work this project would otherwise have 
   enters it. The sandbox proves the change works — it is not trusted to ship it.
 - **Deferred tool loading.** Several MCP servers are attached; their schemas are discovered
   on demand rather than loaded into context up front.
-- **Subagents.** Research fans out across a hackathon's sponsors in parallel and merges
-  only the results.
+- **Subagents.** Dynamic subagents are enabled on every agent: the harness spawns one
+  when a stretch of work is worth delegating — a sponsor's docs during research, a
+  test run during a build — and only the result returns to the parent's context.
 - **Sessions that survive.** `/research` reads a session's own event log to work out which
   hackathon it produced, so reopening an old conversation shows what it learned.
+
+### The sandbox, modified and disclosed
+
+TrueForge ships Daytona as its sandbox provider. This project points that config at a
+**self-hosted Daytona** running a custom image with Docker available inside it — so
+the sandbox does not just write an integration, it stands the stack up and runs the
+target repository's own test suite before anything is proposed. It is a configuration
+change, not a fork: provider URL and image, possible because the harness is open
+source. TrueFoundry DevRel confirmed on Discord that adjusting the sandbox and image
+configuration is within the hackathon rules; the exchange is kept with the submission.
 
 The shared memory is served over MCP rather than wired into one runtime, so it is not
 locked to this harness — but the agents that learn and act are TrueForge agents, and the
