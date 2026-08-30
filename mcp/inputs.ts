@@ -69,7 +69,10 @@ export const hackathonInput = z.object({
     .refine(isTimeZone, "not a time zone this runtime recognises")
     .nullish()
     .describe("IANA zone the hackathon publishes its times in, e.g. 'Europe/London'"),
-  status: cleared(s.hackathonStatus, "unknown"),
+  status: cleared(s.hackathonStatus, "unknown").describe(
+    "Where the event is in its life. The host tells you: a page served from the " +
+      "archive is 'past'. Use 'unknown' only when you genuinely cannot tell.",
+  ),
   mode: s.eventMode.nullish().describe("Online, in person, or both"),
   location: z.string().nullish(),
   registrationUrl: url.nullish(),
@@ -154,7 +157,12 @@ export const sourceInput = z.object({
         `human approval, so fifty separate calls is fifty approvals. Max ${MAX_URLS_PER_CALL} per call.`,
     ),
   product: slug.describe("Slug from list_products — must already be saved"),
-  kind: s.sourceKind.default("docs"),
+  kind: s.sourceKind
+    .default("docs")
+    .describe(
+      "What these URLs are. Leave it as 'docs' unless they are plainly something " +
+        "else. Only 'docs' is expected to answer a build question.",
+    ),
   title: z
     .string()
     .nullish()
@@ -164,10 +172,11 @@ export const sourceInput = z.object({
     ),
   hackathon: slug
     .nullish()
-    .describe(
-      "Also attribute this source to a hackathon, by the slug from list_hackathons.",
-    ),
-  force: z.boolean().default(false).describe("Re-index even when the content hash is unchanged"),
+    .describe("Also attribute this source to a hackathon, by the slug from list_hackathons."),
+  force: z
+    .boolean()
+    .default(false)
+    .describe("Re-index even when the content hash is unchanged"),
 });
 
 /** Columns the write tool sets from a caller-supplied field, in `changed()` order. */

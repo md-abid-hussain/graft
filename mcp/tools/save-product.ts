@@ -3,7 +3,15 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db/connection";
 import { PRODUCT_FIELDS, productInput } from "../inputs";
-import { WRITE, changed, dbFailed, idOf, mergeSocials, reply, unknownSlugToWrite } from "../shared";
+import {
+  WRITE,
+  changed,
+  dbFailed,
+  idOf,
+  mergeSocials,
+  reply,
+  unknownSlugToWrite,
+} from "../shared";
 
 export function registerSaveProduct(server: McpServer) {
   server.registerTool(
@@ -11,7 +19,9 @@ export function registerSaveProduct(server: McpServer) {
     {
       title: "Save a product",
       description:
-        "Record a sponsor product. Step 2 of a research run.\n\n" +
+        "Record a product. Step 2 of a research run when a hackathon is involved, " +
+        "and the first step when it is not — `hackathon` is optional, and a " +
+        "product no event ever ran is an ordinary record.\n\n" +
         "Products are global rather than owned by a hackathon — the same product " +
         "turns up at several of them, and that persistence is the point of the " +
         "corpus. Pass `hackathon` to link this product to one you have already saved, " +
@@ -51,8 +61,7 @@ export function registerSaveProduct(server: McpServer) {
           .from(schema.hackathons)
           .where(eq(schema.hackathons.slug, input.hackathon))
           .limit(1);
-        if (!h)
-          return unknownSlugToWrite("hackathon", input.hackathon);
+        if (!h) return unknownSlugToWrite("hackathon", input.hackathon);
         hackathonId = h.id;
       }
 
@@ -75,7 +84,9 @@ export function registerSaveProduct(server: McpServer) {
         // absent key keeps whatever is there, an explicit null removes that one
         // handle. Assigning the submitted object wholesale meant clearing X also
         // deleted LinkedIn and YouTube.
-        ...(input.socials !== undefined && { socials: mergeSocials(existing?.socials, input.socials) }),
+        ...(input.socials !== undefined && {
+          socials: mergeSocials(existing?.socials, input.socials),
+        }),
         updatedAt: new Date(),
       };
 

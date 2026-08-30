@@ -10,9 +10,10 @@
  * an agent reads when it needs the detail.
  */
 export const INSTRUCTIONS = `
-Graft — documentation and hackathon knowledge for WeMakeDevs sponsor
-products, researched once and stored as structured records so you never read a
-documentation site to answer a question about one.
+Graft — product documentation and hackathon knowledge, researched once and
+stored as structured records so you never read a documentation site to answer a
+question about one. Most products arrive as WeMakeDevs sponsors; a product does
+not need a hackathon to belong here.
 
 There are two jobs here. Work out which one you are doing.
 
@@ -31,21 +32,23 @@ come from — search_docs requires one, and slugs frequently are not what you wo
 guess. Then ask search_docs a whole question, not a keyword list, one product per
 call. Every hit carries the URL it came from; cite it.
 
-## Researching a hackathon (populating the corpus)
+## Researching (populating the corpus)
 
-You are filling this corpus for a hackathon that is not in it yet. Check
-list_hackathons first — if it is already there, you are done, and re-running the
-research costs a lot and changes nothing.
+Two shapes. A hackathon and the sponsor products on it, or a single product that
+belongs to no hackathon at all — \`hackathon\` is optional on save_product, and a
+product on its own is a perfectly good record. Check the matching list tool first:
+if it is already there you are done, and re-running costs a lot and changes nothing.
 
 Discovery is YOUR job, with YOUR web tools. This server does not search the web.
 WeMakeDevs pages are uniform: /hackathons is the index, /hackathons/<slug> the
 overview, with /rules, /schedule and /resources beside it. A hackathon whose results
-are out moves to archive.wemakedevs.org on the same path; luma.com ones are out of
-scope. Take the slug and the host from the index card rather than guessing.
+are out moves to archive.wemakedevs.org on the same path, and some are hosted on
+luma.com instead — same event, same sections, different host. Take the slug and the
+host from the index card rather than guessing.
 
-  1. save_hackathon   the hackathon
+  1. save_hackathon   the hackathon, when there is one
      ask            which sponsors are worth storing — do not assume all of them
-  2. save_product     each one you were told to, linked to that hackathon
+  2. save_product     each one you were told to, linked to that hackathon if any
      ask            which of those to ingest, and say where there is nothing to
   3. ingest_source    one call PER PRODUCT, carrying all of that product's approved
                       URLs in \`urls\`. The call indexes every URL against the one

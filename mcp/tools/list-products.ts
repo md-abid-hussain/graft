@@ -11,7 +11,7 @@ export function registerListProducts(server: McpServer) {
     {
       title: "List products",
       description:
-        "Every sponsor product in the corpus, with its category and how much of it " +
+        "Every product in the corpus, with its category and how much of it " +
         "is indexed. Takes no arguments.\n\n" +
         "Call this first. search_docs requires a product slug and this is where those " +
         "slugs come from — they are frequently not what you would guess from the " +

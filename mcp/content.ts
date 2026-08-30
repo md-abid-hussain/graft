@@ -15,8 +15,9 @@
 export const GUIDE = `
 # Graft
 
-Sponsor products from WeMakeDevs hackathons, researched once and stored as records.
-Ask for what you need instead of reading documentation sites.
+Products and the hackathons they ran on, researched once and stored as records.
+Most arrive as WeMakeDevs sponsors, but a product stands on its own. Ask for what
+you need instead of reading documentation sites.
 
 ## Reading
 
@@ -39,9 +40,15 @@ Two habits matter:
 Every hit cites its URL. \`truncated: true\` means fetch that URL for the rest. A
 product showing 0 chunks has no indexed docs and will return nothing.
 
-## Researching a hackathon
+## Researching
 
-Check \`list_hackathons\` first. If it is already there you are done — re-running
+Two shapes, and the steps below cover both. Usually it is a hackathon and the
+sponsor products on it. Sometimes it is one product on its own — something worth
+building against that no hackathon happens to have run. \`hackathon\` is optional on
+\`save_product\`, so a product with no event is a normal record, not a gap: skip to
+step 4 and carry on.
+
+Check the matching list tool first. If it is already there you are done — re-running
 costs a great deal and changes nothing.
 
 This server has no web access. You discover with your own SERP and fetch tools and
@@ -58,8 +65,10 @@ re-runs nearly free.
     /hackathons/<slug>/resources  docs and links per sponsor
 
 The host is the state: \`www.wemakedevs.org\` while it runs, moving to
-\`archive.wemakedevs.org\` on the same path once results are declared. luma.com and
-devpost hackathons are out of scope.
+\`archive.wemakedevs.org\` on the same path once results are declared. Some are
+hosted on luma.com rather than on wemakedevs.org — the same event with the same
+sections, laid out differently. Read it the same way and store it the same way;
+the sourceUrl is simply the luma page. Take the host from the index card.
 
 Two different slugs, do not mix them. The one in the URL locates the page and is not
 derivable from the title — "Into the Scrape-Verse" lives at \`scrape-verse\`. The
