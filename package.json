@@ -10,6 +10,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "skills:sync": "tsx scripts/sync-skills.ts",
+    "connectors:sync": "tsx scripts/sync-connectors.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:setup": "tsx scripts/db-setup.ts",
