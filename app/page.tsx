@@ -9,6 +9,7 @@ import {
 } from "@/components/landing-sections";
 import { buttonVariants } from "@/components/ui/button";
 import { listHackathons } from "@/lib/hackathons";
+import { countProducts } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +25,13 @@ export default async function Page() {
   let hackathons = 0;
   let tools = 0;
   try {
-    const items = await listHackathons();
-    hackathons = items.length;
-    tools = new Set(items.flatMap((h) => h.sponsors.map((s) => s.slug))).size;
+    // Counted from the products table, not from the hackathons' sponsor lists: a
+    // product does not need a hackathon, and deriving the number through the join
+    // silently left those out of the headline. `countProducts` rather than
+    // `listProducts` — this page renders one integer, not the cards.
+    const [events, productCount] = await Promise.all([listHackathons(), countProducts()]);
+    hackathons = events.length;
+    tools = productCount;
   } catch {
     // The landing page still reads without the index.
   }

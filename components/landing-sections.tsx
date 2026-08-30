@@ -141,7 +141,7 @@ const READ = [
 const WRITE = [
   ["save_hackathon", "The hackathon record. Step 1: products reference it."],
   ["save_product", "A sponsor product, optionally linked to a hackathon."],
-  ["ingest_source", "Fetch, chunk, embed and index one llms-full.txt."],
+  ["ingest_source", "Fetch, chunk, embed and index a batch of doc URLs."],
 ];
 
 const RESOURCES = [

@@ -134,11 +134,34 @@ export const productInput = z.object({
     .describe("Specific to that appearance: credits, track, whether it was required"),
 });
 
+/**
+ * A batch has to be bounded somewhere, and 50 is chosen against the approval gate
+ * rather than against throughput: it is comfortably more than any llms-full.txt run
+ * needs, and enough of a page-by-page docs set to be worth one approval.
+ */
+const MAX_URLS_PER_CALL = 50;
+
 export const sourceInput = z.object({
-  url: url.describe("Direct link to the llms-full.txt file — not the llms.txt link index"),
+  urls: z
+    .array(url)
+    .min(1)
+    .max(MAX_URLS_PER_CALL)
+    .describe(
+      "One or more documentation URLs to index in a single call. Pass an llms-full.txt " +
+        "on its own; pass many URLs when the product publishes separate markdown pages " +
+        "instead. Each becomes its own source with its own content hash, so a re-run " +
+        "only re-embeds what changed. Batch them — every call to this tool stops for " +
+        `human approval, so fifty separate calls is fifty approvals. Max ${MAX_URLS_PER_CALL} per call.`,
+    ),
   product: slug.describe("Slug from list_products — must already be saved"),
   kind: s.sourceKind.default("docs"),
-  title: z.string().nullish().describe("Overrides the title parsed from the file"),
+  title: z
+    .string()
+    .nullish()
+    .describe(
+      "Overrides the title parsed from the file. Applies to every URL in the batch, so " +
+        "leave it unset for multiple pages — each page's own first heading is used.",
+    ),
   hackathon: slug
     .nullish()
     .describe(

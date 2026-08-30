@@ -108,7 +108,7 @@ an hour re-researching it.
 |---|---|
 | `save_hackathon` | The hackathon record. Step 1: products reference it |
 | `save_product` | A sponsor product, optionally linked to a hackathon |
-| `ingest_source` | Fetch, chunk, embed and index one `llms-full.txt` |
+| `ingest_source` | Fetch, chunk, embed and index a batch of doc URLs in one approval |
 
 **Resources** — the same guide the `how_to_use` tool returns, served the spec-correct way
 as well. Exposed twice on purpose: plenty of MCP clients read only `tools/list` and never

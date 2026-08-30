@@ -44,8 +44,14 @@ export interface SearchHit {
 
 export interface SearchDocsOptions {
   query: string;
-  /** Required. Retrieval is always scoped to one product — see `list_products`. */
-  product: string;
+  /**
+   * The product's **id** (`prd_…`), not its slug. Retrieval is always scoped to one
+   * product, and `chunks.product_id` stores the id — pass a slug and the filter simply
+   * matches nothing, so the call succeeds and returns zero hits, which reads as "no
+   * coverage" rather than as the mistake it is. `search_docs` resolves the slug before
+   * calling here, because it can answer an unknown one with the valid options.
+   */
+  productId: string;
   /** Clamped to 1..50. See `boundedLimit`. */
   limit?: number;
 }
@@ -86,7 +92,7 @@ type Row = {
 
 export async function searchDocs({
   query,
-  product,
+  productId,
   limit,
 }: SearchDocsOptions): Promise<SearchHit[]> {
   const trimmed = query.trim();
@@ -110,7 +116,7 @@ export async function searchDocs({
       SELECT c.id AS id,
              row_number() OVER (ORDER BY c.embedding <=> ${literal}::vector) AS rank
       FROM chunks c
-      WHERE c.product_id = ${product}
+      WHERE c.product_id = ${productId}
       ORDER BY c.embedding <=> ${literal}::vector
       LIMIT ${POOL}
     ),
@@ -118,7 +124,7 @@ export async function searchDocs({
       SELECT c.id AS id,
              row_number() OVER (ORDER BY ts_rank_cd(c.tsv, q.query) DESC) AS rank
       FROM chunks c, plainto_tsquery('english', ${trimmed}) AS q(query)
-      WHERE c.product_id = ${product} AND c.tsv @@ q.query
+      WHERE c.product_id = ${productId} AND c.tsv @@ q.query
       ORDER BY ts_rank_cd(c.tsv, q.query) DESC
       LIMIT ${POOL}
     ),

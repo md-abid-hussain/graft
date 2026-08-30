@@ -6,6 +6,7 @@ import {
   chunkMarkdown,
   hasManyH1s,
   looksLikeLlmsFull,
+  nextFence,
   parseByH1,
   parseLlmsFull,
   type Chunk,
@@ -118,16 +119,42 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   const sourceId = sourceIdFor(opts.url);
 
   log(`fetching ${opts.url}`);
-  const res = await fetch(opts.url, {
-    headers: { "user-agent": "Graft/0.1 (+https://github.com/md-abid-hussain/graft)" },
-    signal: AbortSignal.timeout(60_000),
-  });
+
+  // A rejected fetch — DNS, connection refused, the 60s timeout — used to escape
+  // before anything was recorded, so a batch could report a URL as failed while the
+  // corpus held no trace of it. An HTTP error a line below left a row; a dead host
+  // left nothing, which is the same outcome for the operator and a different one for
+  // the database.
+  let res: Response;
+  try {
+    res = await fetch(opts.url, {
+      headers: { "user-agent": "Graft/0.1 (+https://github.com/md-abid-hussain/graft)" },
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await markFailed(sourceId, opts, `fetch failed: ${message}`);
+    throw new Error(`fetch failed for ${opts.url}: ${message}`);
+  }
+
   if (!res.ok) {
     await markFailed(sourceId, opts, `HTTP ${res.status}`);
     throw new Error(`fetch failed: HTTP ${res.status} for ${opts.url}`);
   }
 
   const text = await readCapped(res, opts.url, sourceId, opts, log);
+
+  // Nothing downstream can tell markup from prose. `chunkMarkdown` would happily slice
+  // a page of <div>s into chunks and embed them, producing exactly the failure this
+  // project refuses for llms.txt: entries that match a query confidently and answer
+  // nothing. Worse since ingestion went batched — one URL missing its `.md` across a
+  // fifty-page walk would poison the set silently.
+  const html = htmlReason(text);
+  if (html) {
+    await markFailed(sourceId, opts, html);
+    throw new Error(`${opts.url} ${html}`);
+  }
+
   const byteSize = Buffer.byteLength(text, "utf8");
   const contentHash = hashOf(text);
 
@@ -195,7 +222,10 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
     ? parseLlmsFull(text)
     : hasManyH1s(text)
       ? parseByH1(text, opts.url)
-      : [{ title: opts.title ?? opts.url, url: opts.url, body: text }];
+      : // A single page carries its title in its own first heading. Falling back to
+        // the URL made `docTitle` a URL on every chunk, so a batch of markdown pages
+        // cited fifty identical-looking links instead of fifty page names.
+        [{ title: opts.title ?? titleFromMarkdown(text) ?? opts.url, url: opts.url, body: text }];
 
   const method: DiscoveryMethod =
     opts.discoveryMethod ?? (documents.length > 1 ? "llms-full" : "manual");
@@ -319,7 +349,160 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   };
 }
 
+/**
+ * Is this markup rather than prose?
+ *
+ * Decided from the body alone. `content-type` is not consulted, because it is wrong
+ * too often in the direction that matters: plenty of sites serve perfectly good
+ * markdown as `text/html`, and refusing on the header would reject exactly the
+ * page-by-page docs this pipeline exists to index.
+ *
+ * The test looks for whole-page markers — a doctype, `<html>`, `<head>`, `<body>`, an
+ * XML prolog — anywhere in the opening, rather than for a tag at position zero. That
+ * distinction is the point: markdown legitimately opens with a `<div>`, a `<span>` or
+ * an inline `<img>`, and none of those appear in a document that also declares itself
+ * a whole HTML page.
+ *
+ * The message names the fix, because the caller is an agent that can act on it: nearly
+ * every docs site serving HTML at a path serves markdown at a neighbouring one.
+ */
+function htmlReason(text: string): string | null {
+  const head = text.slice(0, 2048).toLowerCase();
+  const isWholePage = /<!doctype\s+html|<html[\s>]|<head[\s>]|<body[\s>]|<\?xml[\s?]/.test(head);
+  if (!isWholePage) return null;
+
+  return (
+    "returned HTML, not markdown — this pipeline indexes markdown only, and " +
+    "chunking markup produces entries that match queries and answer nothing. Most " +
+    "docs sites serve a markdown twin: try appending `.md` to the page URL, or " +
+    "request it with `Accept: text/markdown`, or use the product's llms-full.txt."
+  );
+}
+
+/** The first real H1, ignoring anything inside a fence. */
+function titleFromMarkdown(text: string): string | null {
+  let fence: string | null = null;
+  for (const line of text.split(/\r?\n/)) {
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+    if (wasInFence || fence !== null) continue;
+    const h1 = line.match(/^#\s+(.+?)\s*$/);
+    if (h1) return h1[1]!;
+  }
+  return null;
+}
+
+/**
+ * Ingest many URLs as one unit of work.
+ *
+ * This exists because of the approval gate, not because of throughput. Every write to
+ * the corpus pauses for a human, so a product that publishes fifty separate markdown
+ * pages instead of one llms-full.txt cost fifty approvals — which is not a slow
+ * workflow, it is an unusable one. One call, one gate, fifty pages.
+ *
+ * Each URL still becomes its own source row with its own content hash, so re-runs stay
+ * cheap per page and a page that changes does not force its neighbours to re-embed.
+ *
+ * One failure does not abort the rest: a docs set with two dead links should index the
+ * other forty-eight and say which two failed.
+ */
+export interface BatchIngestResult {
+  results: Array<{
+    url: string;
+    status: "indexed" | "skipped" | "failed";
+    pageCount: number;
+    chunkCount: number;
+    reason: string | null;
+  }>;
+  indexed: number;
+  skipped: number;
+  failed: number;
+  chunkCount: number;
+  tookMs: number;
+}
+
+/** Fetch and embedding are both network-bound; a handful at a time is plenty, and
+ *  keeps concurrent embedding calls well under any sane rate limit. */
+const INGEST_CONCURRENCY = 3;
+
+export async function ingestSources(
+  urls: string[],
+  base: Omit<IngestOptions, "url">,
+): Promise<BatchIngestResult> {
+  const started = Date.now();
+
+  // Deduplicated first: the source id is derived from the URL, so the same URL twice
+  // in one batch would have two workers writing the same row and deleting each
+  // other's chunks mid-transaction.
+  const unique = [...new Set(urls)];
+  const results: BatchIngestResult["results"] = new Array(unique.length);
+
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(INGEST_CONCURRENCY, unique.length) }, async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= unique.length) return;
+        const url = unique[i]!;
+        try {
+          const r = await ingestSource({ ...base, url });
+          results[i] = {
+            url,
+            status: r.skipped ? "skipped" : "indexed",
+            pageCount: r.pageCount,
+            chunkCount: r.chunkCount,
+            reason: r.reason ?? null,
+          };
+        } catch (error) {
+          results[i] = {
+            url,
+            status: "failed",
+            pageCount: 0,
+            chunkCount: 0,
+            reason: error instanceof Error ? error.message : String(error),
+          };
+        }
+      }
+    }),
+  );
+
+  return {
+    results,
+    indexed: results.filter((r) => r.status === "indexed").length,
+    skipped: results.filter((r) => r.status === "skipped").length,
+    failed: results.filter((r) => r.status === "failed").length,
+    chunkCount: results.reduce((n, r) => n + r.chunkCount, 0),
+    tookMs: Date.now() - started,
+  };
+}
+
+/**
+ * Record that a source could not be ingested.
+ *
+ * A source that is already `indexed` is never downgraded. Its chunks are still in the
+ * table and still answering queries, so a transient 404 or a DNS blip on a re-run must
+ * not leave the product reading "failed" while retrieval works perfectly. The error is
+ * still recorded — that is the useful half — but the status keeps describing the
+ * chunks, which is what it is for.
+ *
+ * This matters more now that ingestion is batched: one flaky host in a fifty-URL
+ * re-run would otherwise mark a working source broken.
+ */
 async function markFailed(sourceId: string, opts: IngestOptions, error: string) {
+  const [existing] = await db
+    .select({ status: schema.sources.status })
+    .from(schema.sources)
+    .where(eq(schema.sources.id, sourceId))
+    .limit(1);
+
+  if (existing?.status === "indexed") {
+    await db
+      .update(schema.sources)
+      .set({ error, fetchedAt: new Date() })
+      .where(eq(schema.sources.id, sourceId));
+    return;
+  }
+
   await db
     .insert(schema.sources)
     .values({

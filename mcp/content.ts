@@ -114,10 +114,25 @@ nobody asks and can be 20x the size of one people do build on.
 **6 — ingest_source, for the ones approved.** Do not search for the llms-full.txt;
 try \`<docs domain>/llms-full.txt\` and fetch it.
 
+**One call per product, not one per URL.** \`urls\` is a list, and every URL in a
+call is indexed against the single \`product\` that call names. So batch a product's
+pages together — every call stops for human approval, and forty pages one at a time
+asks a person to click forty times — but never put two products' URLs in the same
+call. They would be stored under whichever product you named, and \`search_docs\`
+filters on that, so the other product's docs become unfindable. Two products
+approved, two calls. Within a call the URLs are fetched concurrently and each keeps
+its own content hash, so re-runs still only re-embed what changed.
+
 **llms-full.txt, not llms.txt.** llms-full.txt is the whole documentation set;
 llms.txt is only an index of links. Indexing an llms.txt yields chunks of pure link
 lists that match queries confidently and answer none of them. Confirm the URL holds
 prose before passing it.
+
+**When there is no llms-full.txt, read llms.txt yourself and pass the pages.** Plenty
+of products publish markdown per page instead of one concatenated file — SigNoz serves
+any docs URL with \`.md\` appended, Datadog nests an llms.txt per section. Walk the
+index, collect the page URLs, and send them as one batch. That is a normal outcome,
+not a fallback.
 
 ## Writing
 

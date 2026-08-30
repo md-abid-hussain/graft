@@ -31,7 +31,7 @@ function closesFence(line: string, marker: string): boolean {
 }
 
 /** Track fence state for one line. Returns the new state. */
-function nextFence(line: string, fence: string | null): string | null {
+export function nextFence(line: string, fence: string | null): string | null {
   if (fence) return closesFence(line, fence) ? null : fence;
   const open = line.match(FENCE);
   return open ? open[1]! : null;
