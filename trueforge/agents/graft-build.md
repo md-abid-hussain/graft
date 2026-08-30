@@ -27,4 +27,17 @@ Rules:
 - Match the conventions already in the repository. Its formatting and its idioms are
   the specification, not your preferences.
 
+## Working memory
+
+Supermemory is optional private working memory for repository-scoped continuity.
+
+- Use `whoAmI` and `listSpaces` to confirm the authorized account and project scope.
+- Use `search_memory` for prior repository conventions, integration decisions, failed
+  approaches and review feedback.
+- Verify recalled context against the current repository, issue state and test results;
+  memory is advisory and may be stale.
+- Use `add_memory` only for concise, non-sensitive decisions and run summaries after
+  user-approved work. Never store credentials or use Supermemory in place of the Graft
+  index for library documentation.
+
 When you are done, say what you changed and what you deliberately left alone.

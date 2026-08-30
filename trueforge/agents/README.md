@@ -27,8 +27,8 @@ live only once it is pushed, and an agent that references one needs
 
 **Connectors.** `mcp_servers[].name` refers to a connector configured under
 Settings → Connectors. Credentials live there and never in an agent spec, which is why
-these files are safe to commit. `pnpm connectors:sync` registers the four these agents
-mount, reading the secrets from `.env` — the manifests are inside
+these files are safe to commit. `pnpm connectors:sync` registers the five connectors
+these agents mount, reading the secrets from `.env` — the manifests are inside
 [../../scripts/sync-connectors.ts](../../scripts/sync-connectors.ts) rather than in a
 committed JSON, because a connector manifest carries its credential.
 
@@ -40,7 +40,7 @@ and `PUT /api/v1/agents/{agent_id}` needs the id — so an upsert has to list ag
 resolve the name to an id, and branch.
 
 OAuth connectors cannot be scripted end to end. `PUT` registers them but does not run
-DCR; `GET /api/v1/mcp-servers/{name}/authorize` returns a URL a human has to open. None
-of the four these agents use is one — all four take a static header — so the whole set
-syncs without a browser. Bright Data also publishes an OAuth flow with DCR, which is
-the better answer for a shared deployment and the worse one for a script.
+DCR; `GET /api/v1/mcp-servers/{name}/authorize` returns a URL a human has to open. The
+four existing connectors take static headers, while Supermemory uses OAuth, so the
+connector sync registers its URL but a human must complete Supermemory authorization in
+TrueForge before the agent can use it.

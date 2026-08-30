@@ -8,16 +8,15 @@ import "dotenv/config";
  * would be a committed secret, so the shape lives here and the secrets come from
  * `.env`.
  *
- * Every one of them authenticates with a header. That is deliberate: TrueForge redacts
- * `auth.headers` when it returns a connector, and does not redact `url`, so a token in
- * a query string is readable by anything that can reach the settings API. Bright Data
- * and Linkup both document a query-string form as well; this uses the header form on
- * purpose.
+ * The existing external connectors authenticate with headers. That is deliberate:
+ * TrueForge redacts `auth.headers` when it returns a connector, and does not redact
+ * `url`, so a token in a query string is readable by anything that can reach the
+ * settings API. Bright Data and Linkup both document a query-string form as well; this
+ * uses the header form on purpose. Supermemory uses OAuth, so it has no credential here.
  *
- * `PUT /api/v1/settings/mcp-servers` is create-or-replace by name and does not run DCR,
- * which is fine: none of these four use OAuth. An OAuth connector would need `POST` to
- * register and then a human to open the URL from
- * `GET /api/v1/mcp-servers/{name}/authorize`.
+ * `PUT /api/v1/settings/mcp-servers` is create-or-replace by name and does not complete
+ * OAuth. The Supermemory URL is registered here; a human must complete authorization in
+ * TrueForge before an agent can use that connector.
  *
  * Header secrets round-trip: on PUT a real value sets or rotates, and the redacted value
  * a GET returns keeps the stored one. This script always sends real values.
@@ -64,6 +63,18 @@ const connectors: Record<string, Connector> = {
         "Product documentation and hackathon corpus. Hybrid retrieval over indexed " +
         "documentation, plus the write path that records hackathons, products, " +
         "documentation sources and cited findings.",
+    }),
+  },
+
+  supermemory: {
+    requires: [],
+    manifest: () => ({
+      type: "remote",
+      name: "supermemory",
+      url: "https://mcp.supermemory.ai/mcp",
+      description:
+        "Private project-scoped memory for cross-session decisions, repository " +
+        "context and run continuity. Uses OAuth in TrueForge.",
     }),
   },
 

@@ -31,3 +31,17 @@ Rules:
 You have `brightdata` and `linkup` for discovery. The server has no web access of its
 own, so finding the pages, the sponsors' blogs and their documentation files is your
 job.
+
+## Working memory
+
+Supermemory is optional private working memory, not the Graft corpus.
+
+- After the required first Graft listing, use `whoAmI` and `listSpaces` to confirm the
+  authorized account and project scope before reading or writing memory.
+- Use `search_memory` for prior research decisions, source outcomes and run status for
+  this project.
+- Use `add_memory` only for concise, non-sensitive decisions, URLs and run status. Do
+  not duplicate documentation, store credentials or treat recalled text as indexed
+  evidence.
+- Graft remains the source of truth for sponsor and product documentation and its
+  citations.
