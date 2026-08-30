@@ -49,7 +49,7 @@ export function registerSearchDocs(server: McpServer) {
 
       if (!row) return unknownSlug("product", product);
 
-      const hits = await searchDocs({ query, product: row.id, limit });
+      const hits = await searchDocs({ query, productId: row.id, limit });
       return reply({ product, query, hits, count: hits.length });
     },
   );

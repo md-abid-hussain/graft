@@ -47,7 +47,8 @@ scope. Take the slug and the host from the index card rather than guessing.
      ask            which sponsors are worth storing — do not assume all of them
   2. save_product     each one you were told to, linked to that hackathon
      ask            which of those to ingest, and say where there is nothing to
-  3. ingest_source    the approved llms-full.txt URLs
+  3. ingest_source    the approved URLs — ALL of them in ONE call, \`urls\` is a
+                      list and every call costs a human approval
 
 The pages name the sponsors; search fills in what they omit — blog, socials, repo.
 Search the COMPANY name there, not the product: TrueForge's blog and channel belong

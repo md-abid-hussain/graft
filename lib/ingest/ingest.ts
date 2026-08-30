@@ -6,6 +6,7 @@ import {
   chunkMarkdown,
   hasManyH1s,
   looksLikeLlmsFull,
+  nextFence,
   parseByH1,
   parseLlmsFull,
   type Chunk,
@@ -128,6 +129,18 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   }
 
   const text = await readCapped(res, opts.url, sourceId, opts, log);
+
+  // Nothing downstream can tell markup from prose. `chunkMarkdown` would happily slice
+  // a page of <div>s into chunks and embed them, producing exactly the failure this
+  // project refuses for llms.txt: entries that match a query confidently and answer
+  // nothing. Worse since ingestion went batched — one URL missing its `.md` across a
+  // fifty-page walk would poison the set silently.
+  const html = htmlReason(res, text);
+  if (html) {
+    await markFailed(sourceId, opts, html);
+    throw new Error(`${opts.url} ${html}`);
+  }
+
   const byteSize = Buffer.byteLength(text, "utf8");
   const contentHash = hashOf(text);
 
@@ -195,7 +208,10 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
     ? parseLlmsFull(text)
     : hasManyH1s(text)
       ? parseByH1(text, opts.url)
-      : [{ title: opts.title ?? opts.url, url: opts.url, body: text }];
+      : // A single page carries its title in its own first heading. Falling back to
+        // the URL made `docTitle` a URL on every chunk, so a batch of markdown pages
+        // cited fifty identical-looking links instead of fifty page names.
+        [{ title: opts.title ?? titleFromMarkdown(text) ?? opts.url, url: opts.url, body: text }];
 
   const method: DiscoveryMethod =
     opts.discoveryMethod ?? (documents.length > 1 ? "llms-full" : "manual");
@@ -315,6 +331,138 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
     chunkCount: rows.length,
     byteSize,
     skipped: false,
+    tookMs: Date.now() - started,
+  };
+}
+
+/**
+ * Is this markup rather than prose, and how do we know?
+ *
+ * Two independent signals, because either alone is wrong often enough to matter. The
+ * `content-type` header is authoritative when a server sets it honestly, but plenty
+ * serve markdown as `text/html` or omit the header entirely. Sniffing the opening of
+ * the body catches those — and is deliberately anchored to the start, since a genuine
+ * markdown file may well contain an inline `<img>` or a `<details>` block halfway down
+ * and must not be refused for it.
+ *
+ * The message names the fix, because the caller is an agent that can act on it: nearly
+ * every docs site that serves HTML at a path serves markdown at a neighbouring one.
+ */
+function htmlReason(res: Response, text: string): string | null {
+  const declared = (res.headers.get("content-type") ?? "").toLowerCase();
+  const head = text.slice(0, 512).trimStart().toLowerCase();
+  const looksLikeMarkup = /^(<!doctype\s+html|<html[\s>]|<\?xml|<head[\s>])/.test(head);
+
+  // A trustworthy `text/markdown` or `text/plain` overrides the sniff: some markdown
+  // legitimately opens with an HTML block, and the server said what it was.
+  const declaredText = declared.includes("text/markdown") || declared.includes("text/plain");
+  if (declaredText && !looksLikeMarkup) return null;
+
+  if (looksLikeMarkup || (declared.includes("text/html") && !declaredText)) {
+    return (
+      "returned HTML, not markdown — this pipeline indexes markdown only, and " +
+      "chunking markup produces entries that match queries and answer nothing. Most " +
+      "docs sites serve a markdown twin: try appending `.md` to the page URL, or " +
+      "request it with `Accept: text/markdown`, or use the product's llms-full.txt."
+    );
+  }
+
+  return null;
+}
+
+/** The first real H1, ignoring anything inside a fence. */
+function titleFromMarkdown(text: string): string | null {
+  let fence: string | null = null;
+  for (const line of text.split(/\r?\n/)) {
+    const wasInFence = fence !== null;
+    fence = nextFence(line, fence);
+    if (wasInFence || fence !== null) continue;
+    const h1 = line.match(/^#\s+(.+?)\s*$/);
+    if (h1) return h1[1]!;
+  }
+  return null;
+}
+
+/**
+ * Ingest many URLs as one unit of work.
+ *
+ * This exists because of the approval gate, not because of throughput. Every write to
+ * the corpus pauses for a human, so a product that publishes fifty separate markdown
+ * pages instead of one llms-full.txt cost fifty approvals — which is not a slow
+ * workflow, it is an unusable one. One call, one gate, fifty pages.
+ *
+ * Each URL still becomes its own source row with its own content hash, so re-runs stay
+ * cheap per page and a page that changes does not force its neighbours to re-embed.
+ *
+ * One failure does not abort the rest: a docs set with two dead links should index the
+ * other forty-eight and say which two failed.
+ */
+export interface BatchIngestResult {
+  results: Array<{
+    url: string;
+    status: "indexed" | "skipped" | "failed";
+    pageCount: number;
+    chunkCount: number;
+    reason: string | null;
+  }>;
+  indexed: number;
+  skipped: number;
+  failed: number;
+  chunkCount: number;
+  tookMs: number;
+}
+
+/** Fetch and embedding are both network-bound; a handful at a time is plenty, and
+ *  keeps concurrent embedding calls well under any sane rate limit. */
+const INGEST_CONCURRENCY = 3;
+
+export async function ingestSources(
+  urls: string[],
+  base: Omit<IngestOptions, "url">,
+): Promise<BatchIngestResult> {
+  const started = Date.now();
+
+  // Deduplicated first: the source id is derived from the URL, so the same URL twice
+  // in one batch would have two workers writing the same row and deleting each
+  // other's chunks mid-transaction.
+  const unique = [...new Set(urls)];
+  const results: BatchIngestResult["results"] = new Array(unique.length);
+
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(INGEST_CONCURRENCY, unique.length) }, async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= unique.length) return;
+        const url = unique[i]!;
+        try {
+          const r = await ingestSource({ ...base, url });
+          results[i] = {
+            url,
+            status: r.skipped ? "skipped" : "indexed",
+            pageCount: r.pageCount,
+            chunkCount: r.chunkCount,
+            reason: r.reason ?? null,
+          };
+        } catch (error) {
+          results[i] = {
+            url,
+            status: "failed",
+            pageCount: 0,
+            chunkCount: 0,
+            reason: error instanceof Error ? error.message : String(error),
+          };
+        }
+      }
+    }),
+  );
+
+  return {
+    results,
+    indexed: results.filter((r) => r.status === "indexed").length,
+    skipped: results.filter((r) => r.status === "skipped").length,
+    failed: results.filter((r) => r.status === "failed").length,
+    chunkCount: results.reduce((n, r) => n + r.chunkCount, 0),
     tookMs: Date.now() - started,
   };
 }
