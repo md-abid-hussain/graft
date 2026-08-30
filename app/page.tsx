@@ -29,6 +29,9 @@ export default async function Page() {
     // product does not need a hackathon, and deriving the number through the join
     // silently left those out of the headline. `countProducts` rather than
     // `listProducts` — this page renders one integer, not the cards.
+    //
+    // For the same reason the line below is gated on the product count: a corpus with
+    // products and no events still has something to report.
     const [events, productCount] = await Promise.all([listHackathons(), countProducts()]);
     hackathons = events.length;
     tools = productCount;
@@ -78,10 +81,15 @@ export default async function Page() {
             </Link>
           </div>
 
-          {hackathons > 0 ? (
+          {tools > 0 ? (
             <p className="mt-6 text-sm text-muted-foreground">
-              <Count n={tools} /> tool{tools === 1 ? "" : "s"} learned, across{" "}
-              <Count n={hackathons} /> hackathon{hackathons === 1 ? "" : "s"} and on their own.
+              <Count n={tools} /> tool{tools === 1 ? "" : "s"} learned
+              {hackathons > 0 ? (
+                <>
+                  {" \u00b7 "}
+                  <Count n={hackathons} /> hackathon{hackathons === 1 ? "" : "s"} on record
+                </>
+              ) : null}
             </p>
           ) : null}
         </section>
