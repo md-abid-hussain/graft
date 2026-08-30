@@ -160,7 +160,7 @@ change, not a fork: provider URL and image, possible because the harness is open
 source. TrueFoundry DevRel confirmed on Discord that adjusting the sandbox and image
 configuration is within the hackathon rules; the exchange is kept with the submission.
 
-The shared memory is served over MCP rather than wired into one runtime, so it is not
+The corpus is served over MCP rather than wired into one runtime, so it is not
 locked to this harness — but the agents that learn and act are TrueForge agents, and the
 approval gates, the sandbox and the subagents are the harness's, not an imitation of them.
 
