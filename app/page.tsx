@@ -10,7 +10,7 @@ import {
 } from "@/components/landing-sections";
 import { buttonVariants } from "@/components/ui/button";
 import { HeroEvidence } from "@/components/hero-evidence";
-import { listBuilds } from "@/lib/builds";
+import { countBuilds } from "@/lib/builds";
 import { listHackathons } from "@/lib/hackathons";
 import { countProducts } from "@/lib/products";
 import { cn } from "@/lib/utils";
@@ -36,14 +36,14 @@ export default async function Page() {
     //
     // For the same reason the line below is gated on the product count: a corpus with
     // products and no events still has something to report.
-    const [events, productCount, builds] = await Promise.all([
+    const [events, productCount, buildCount] = await Promise.all([
       listHackathons(),
       countProducts(),
-      listBuilds(),
+      countBuilds(),
     ]);
     hackathons = events.length;
     tools = productCount;
-    runs = builds.length;
+    runs = buildCount;
   } catch {
     // The landing page still reads without the index.
   }

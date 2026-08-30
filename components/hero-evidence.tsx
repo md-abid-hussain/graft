@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CircleCheck, CirclePause, Quote } from "lucide-react";
-import { BUILD_STATUS, listBuilds, type BuildRecord } from "@/lib/builds";
+import { BUILD_STATUS, heroBuild } from "@/lib/builds";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,19 +13,26 @@ import { cn } from "@/lib/utils";
  * down the stack renders without it; the two truthful-but-static cards stand alone.
  */
 export async function HeroEvidence() {
-  let latest: BuildRecord | undefined;
+  let latest: Awaited<ReturnType<typeof heroBuild>> | null = null;
   try {
-    // Newest proposed run first — "waiting on you" is the state that proves the gate.
-    const rows = await listBuilds();
-    latest = rows.find((b) => b.status === "proposed") ?? rows[0];
+    latest = await heroBuild();
   } catch {
     // The landing page still reads without the index.
   }
 
+  // Only claim a validation that the record actually carries. A blocked run is a
+  // legitimate build record, and it never ran anything.
+  const validated =
+    latest != null &&
+    ["validation", "tests", "test"].some(
+      (k) =>
+        typeof latest?.details?.[k] === "string" && (latest.details[k] as string).length > 0,
+    );
+
   return (
     <div className="relative mx-auto w-full max-w-md">
       {/* graft-learn — a write, paused at the harness's gate */}
-      <EvidenceCard agent="graft-learn" chrome="tool call" className="lg:-rotate-[0.6deg]">
+      <EvidenceCard agent="graft-learn" chrome="example" className="lg:-rotate-[0.6deg]">
         <p className="font-mono text-xs text-foreground/85">
           ingest_source <span className="text-muted-foreground">{"{"}</span>
         </p>
@@ -43,7 +50,7 @@ export async function HeroEvidence() {
       {/* graft-recall — a cited answer out of the index */}
       <EvidenceCard
         agent="graft-recall"
-        chrome="search_docs"
+        chrome="example"
         className="-mt-3 lg:ml-8 lg:rotate-[0.5deg]"
       >
         <p className="font-mono text-xs text-muted-foreground">
@@ -66,7 +73,7 @@ export async function HeroEvidence() {
       {latest ? (
         <EvidenceCard
           agent="graft-build"
-          chrome="save_build"
+          chrome={"live \u00b7 save_build"}
           className="-mt-3 lg:ml-4 lg:-rotate-[0.4deg]"
         >
           <Link href={`/builds/${latest.slug}`} className="group block">
@@ -82,17 +89,19 @@ export async function HeroEvidence() {
               >
                 {(BUILD_STATUS[latest.status] ?? BUILD_STATUS.done).label}
               </span>
-              <span className="inline-flex items-center gap-1 font-mono text-[0.6875rem] text-muted-foreground">
-                <CircleCheck className="size-3" />
-                tests ran in the sandbox
-              </span>
+              {validated ? (
+                <span className="inline-flex items-center gap-1 font-mono text-[0.6875rem] text-muted-foreground">
+                  <CircleCheck className="size-3" />
+                  validated in the sandbox
+                </span>
+              ) : null}
             </p>
           </Link>
         </EvidenceCard>
       ) : null}
 
       <p className="mt-4 text-center font-mono text-[0.6875rem] tracking-wide text-muted-foreground/70">
-        live from this instance — gates, citations, and the last recorded run
+        two worked examples — and, live from this instance, the last recorded run
       </p>
     </div>
   );

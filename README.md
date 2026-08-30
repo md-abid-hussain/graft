@@ -295,8 +295,31 @@ Reviewed so far: [#5](https://github.com/md-abid-hussain/graft/pull/5),
 
 ## AI assistance disclosure
 
-_To be completed before submission._ The hackathon rules require disclosure of AI
-assistant use.
+AI wrote most of this code, under direction. Three layers, disclosed separately:
+
+**Claude (Claude Code)** was the development assistant throughout: writing code,
+fixing bugs, responding to Qodo review findings, and drafting documentation. Scope,
+architecture and every decision that appears in this README were directed and
+reviewed by the maintainer, who can explain any line of it.
+
+**This project's own build agent wrote part of this project.** `graft-build`,
+running on TrueForge, authored [PR #23](https://github.com/md-abid-hussain/graft/pull/23)
+— the Supermemory memory mount for its own sibling agents — end to end: it read
+TrueForge's connector API from the Graft index, made the change in the sandbox,
+validated it, opened the pull request, and remediated Qodo's High-severity
+space-scoping finding in-thread. That PR is **not merged yet**; it is deliberately
+left open as a live, reviewable record of the agent's work. The same agent ran the
+issue-triage pass recorded on `/builds`. Every write it made paused at the harness's
+approval gate first.
+
+**Attribution:** the agent's commits and PR comments appear under the maintainer's
+GitHub account, because the GitHub MCP connector authenticates with the maintainer's
+token — the agent holds no identity of its own there. The authoritative record of
+what the agent did versus the human is the TrueForge session event log and the
+`/builds` records, and the agent identifies itself in the PR thread.
+
+The one change to TrueForge itself — the self-hosted Daytona sandbox — is
+configuration, not code, and is disclosed [above](#the-sandbox-modified-and-disclosed).
 
 ## License
 
