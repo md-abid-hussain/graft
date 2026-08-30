@@ -94,7 +94,7 @@ const STEPS = [
   {
     n: "03",
     title: "It builds with you",
-    body: "Ask it to add something it knows. It reads your repository, writes the change in a sandbox, runs your tests, and opens a pull request you approve.",
+    body: "Ask it to add something it knows. It reads your repository, writes the change in a sandbox, runs your tests, opens a pull request you approve — and records the run either way.",
   },
 ];
 
@@ -132,7 +132,7 @@ const READ = [
   ["how_to_use", "What the server is, how to drive it, and what is indexed right now."],
   ["list_products", "Everything on record, with category and how much is indexed."],
   ["get_product", "Full record: links, socials, indexed sources, hackathons it appeared at."],
-  ["list_hackathons", "Hackathons on record, with dates and coverage."],
+  ["list_hackathons", "Hackathons on record, with dates and status."],
   ["get_hackathon", "Tracks, judging, rules and requirements for one event."],
   ["search_docs", "Hybrid retrieval over one product's docs, every result cited."],
 ];
@@ -176,11 +176,122 @@ function ToolGroup({
   );
 }
 
+/**
+ * The three agents as operating loops against the contract, not as one-liners.
+ *
+ * A step in the flow that pauses for the harness's approval gate is marked, because
+ * where the gates fall IS the story — the same tools without them would be a chatbox.
+ */
+const AGENTS: {
+  name: string;
+  verb: string;
+  mounts: string;
+  flow: { step: string; gated?: boolean }[];
+  body: string;
+}[] = [
+  {
+    name: "graft-learn",
+    verb: "researches",
+    mounts: "bright data · linkup · graft — skill: graft-research",
+    flow: [
+      { step: "discover" },
+      { step: "save_hackathon", gated: true },
+      { step: "ask which sponsors" },
+      { step: "save_product", gated: true },
+      { step: "ask what to ingest" },
+      { step: "ingest_source", gated: true },
+    ],
+    body: "Finds the pages itself — SERP, sitemaps, llms-full.txt — and sends facts and URLs, never content. The server fetches, chunks and embeds; the human decides what matters and what is worth ingesting.",
+  },
+  {
+    name: "graft-recall",
+    verb: "answers",
+    mounts: "graft only — skill: graft-docs-lookup",
+    flow: [
+      { step: "list_* for slugs" },
+      { step: "search_docs, whole questions" },
+      { step: "cited answer — or an honest not-indexed" },
+    ],
+    body: "Reads only the contract: no web, no memory, no guessed slugs. Every claim carries the URL it came from, and a gap in the index is reported as a gap.",
+  },
+  {
+    name: "graft-build",
+    verb: "acts",
+    mounts: "graft + save_build · github · linkup — skills: library-integration, docs-lookup",
+    flow: [
+      { step: "search_docs first" },
+      { step: "web fallback, disclosed" },
+      { step: "sandbox: change + run the target's tests" },
+      { step: "propose via GitHub", gated: true },
+      { step: "save_build, either way" },
+    ],
+    body: "Its capability is its mounts: integrate a library, triage issues, remediate a review. Proven in a Docker-capable sandbox the GitHub credential never enters, then recorded through the contract.",
+  },
+];
+
+export function AgentsSection() {
+  return (
+    <section className="border-t py-20">
+      <SectionHeading index="03" label="The agents" title="Three agents, one contract.">
+        <p>
+          An agent&apos;s capability here is defined by what it mounts, not by its prompt —
+          each is a thin instruction file over connectors and skills, driving the same ten
+          typed tools. Marked steps pause at the harness&apos;s approval gate.
+        </p>
+      </SectionHeading>
+
+      <ul className="mt-10 space-y-px overflow-hidden rounded-2xl border bg-border">
+        {AGENTS.map((a) => (
+          <li key={a.name} className="bg-background p-6">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h3 className="font-mono text-sm font-semibold text-primary">{a.name}</h3>
+              <span className="text-sm text-muted-foreground">{a.verb}</span>
+              <span className="ml-auto font-mono text-[0.6875rem] text-muted-foreground/70">
+                {a.mounts}
+              </span>
+            </div>
+            <p className="mt-3 flex flex-wrap items-center gap-y-1.5 font-mono text-xs">
+              {a.flow.map((f, i) => (
+                <span key={f.step} className="flex items-center">
+                  {i > 0 ? <span className="mx-2 text-muted-foreground/50">→</span> : null}
+                  <span
+                    className={
+                      f.gated
+                        ? "rounded-md border border-primary/40 bg-primary/8 px-1.5 py-0.5 text-primary"
+                        : "text-foreground/80"
+                    }
+                  >
+                    {f.gated ? "⏸ " : ""}
+                    {f.step}
+                  </span>
+                </span>
+              ))}
+            </p>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              {a.body}
+            </p>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-4 text-sm text-muted-foreground">
+        The loop closes: <Mono>graft-learn</Mono> writes what <Mono>graft-recall</Mono> reads,
+        and <Mono>graft-build</Mono> reads both and writes back what it did. The corpus
+        compounds instead of resetting.
+      </p>
+    </section>
+  );
+}
+
+function Mono({ children }: { children: React.ReactNode }) {
+  return <span className="font-mono text-xs text-foreground">{children}</span>;
+}
+
 export function McpSection() {
   return (
     <section className="border-t py-20">
       <SectionHeading
-        index="03"
+        index="04"
         label="The MCP surface"
         title="One server. Ten tools, two resources."
       >
@@ -228,7 +339,7 @@ const HARNESS = [
   ],
   [
     "Subagents",
-    "Research fans out across a hackathon's sponsors in parallel and merges only the results.",
+    "Dynamic subagents on every agent: the harness spawns one when work is worth delegating, and only the result returns to the parent's context.",
   ],
   [
     "Sessions that survive",
@@ -243,8 +354,12 @@ const HARNESS = [
 export function TrueForgeSection() {
   return (
     <section className="border-t py-20">
-      <SectionHeading index="04" label="How TrueForge is used" title="Not as a model wrapper.">
-        <p>The harness does work this project would otherwise have to build.</p>
+      <SectionHeading index="05" label="How TrueForge is used" title="Not as a model wrapper.">
+        <p>
+          An agent that acts needs tool connections, subagent delegation, sandboxed execution,
+          skills, and context that survives — a runtime nobody builds well in a week. TrueForge
+          is that runtime; these agents are deliberately thin on top of it.
+        </p>
       </SectionHeading>
 
       <dl className="mt-10 grid gap-x-10 gap-y-6 sm:grid-cols-2">

@@ -11,144 +11,183 @@
    and neutrals at ~155 so tints never fight each other. */
 
 :root {
-    --background: oklch(0.982 0.003 155);
-    --foreground: oklch(0.198 0.014 162);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.198 0.014 162);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.198 0.014 162);
-    --primary: oklch(0.512 0.055 166);
-    --primary-foreground: oklch(0.995 0.002 155);
-    --secondary: oklch(0.958 0.004 155);
-    --secondary-foreground: oklch(0.268 0.014 162);
-    --muted: oklch(0.958 0.004 155);
-    --muted-foreground: oklch(0.492 0.013 158);
-    --accent: oklch(0.948 0.012 165);
-    --accent-foreground: oklch(0.352 0.042 166);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.908 0.005 155);
-    --input: oklch(0.908 0.005 155);
-    --ring: oklch(0.512 0.055 166);
-    /* Sequential ramp off the accent hue — readable side by side, unlike the
+  --background: oklch(0.982 0.003 155);
+  --foreground: oklch(0.198 0.014 162);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.198 0.014 162);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.198 0.014 162);
+  --primary: oklch(0.512 0.055 166);
+  --primary-foreground: oklch(0.995 0.002 155);
+  --secondary: oklch(0.958 0.004 155);
+  --secondary-foreground: oklch(0.268 0.014 162);
+  --muted: oklch(0.958 0.004 155);
+  --muted-foreground: oklch(0.492 0.013 158);
+  --accent: oklch(0.948 0.012 165);
+  --accent-foreground: oklch(0.352 0.042 166);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.908 0.005 155);
+  --input: oklch(0.908 0.005 155);
+  --ring: oklch(0.512 0.055 166);
+  /* Sequential ramp off the accent hue — readable side by side, unlike the
        default five-grey scale which is indistinguishable in a legend. */
-    --chart-1: oklch(0.512 0.055 166);
-    --chart-2: oklch(0.612 0.048 172);
-    --chart-3: oklch(0.702 0.042 178);
-    --chart-4: oklch(0.788 0.034 184);
-    --chart-5: oklch(0.862 0.026 190);
-    --radius: 0.875rem;
-    /* The chat SDK names two of its own tokens --border and --radius, so pointing
+  --chart-1: oklch(0.512 0.055 166);
+  --chart-2: oklch(0.612 0.048 172);
+  --chart-3: oklch(0.702 0.042 178);
+  --chart-4: oklch(0.788 0.034 184);
+  --chart-5: oklch(0.862 0.026 190);
+  --radius: 0.875rem;
+  /* The chat SDK names two of its own tokens --border and --radius, so pointing
        those at ours would be self-referential and resolve to nothing. These aliases
        give it a different name to read the same value from. */
-    --app-radius: 0.875rem;
-    --sidebar: oklch(0.968 0.004 155);
-    --sidebar-foreground: oklch(0.198 0.014 162);
-    --sidebar-primary: oklch(0.512 0.055 166);
-    --sidebar-primary-foreground: oklch(0.995 0.002 155);
-    --sidebar-accent: oklch(0.948 0.012 165);
-    --sidebar-accent-foreground: oklch(0.352 0.042 166);
-    --sidebar-border: oklch(0.908 0.005 155);
-    --sidebar-ring: oklch(0.512 0.055 166);
+  --app-radius: 0.875rem;
+  --sidebar: oklch(0.968 0.004 155);
+  --sidebar-foreground: oklch(0.198 0.014 162);
+  --sidebar-primary: oklch(0.512 0.055 166);
+  --sidebar-primary-foreground: oklch(0.995 0.002 155);
+  --sidebar-accent: oklch(0.948 0.012 165);
+  --sidebar-accent-foreground: oklch(0.352 0.042 166);
+  --sidebar-border: oklch(0.908 0.005 155);
+  --sidebar-ring: oklch(0.512 0.055 166);
 }
 
 .dark {
-    --background: oklch(0.178 0.012 162);
-    --foreground: oklch(0.962 0.004 155);
-    --card: oklch(0.222 0.014 162);
-    --card-foreground: oklch(0.962 0.004 155);
-    --popover: oklch(0.222 0.014 162);
-    --popover-foreground: oklch(0.962 0.004 155);
-    --primary: oklch(0.702 0.062 168);
-    --primary-foreground: oklch(0.178 0.018 166);
-    --secondary: oklch(0.268 0.014 162);
-    --secondary-foreground: oklch(0.962 0.004 155);
-    --muted: oklch(0.268 0.014 162);
-    --muted-foreground: oklch(0.712 0.014 158);
-    --accent: oklch(0.288 0.022 165);
-    --accent-foreground: oklch(0.928 0.018 165);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 11%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.702 0.062 168);
-    --chart-1: oklch(0.702 0.062 168);
-    --chart-2: oklch(0.628 0.052 174);
-    --chart-3: oklch(0.548 0.044 180);
-    --chart-4: oklch(0.462 0.036 186);
-    --chart-5: oklch(0.382 0.028 192);
-    --sidebar: oklch(0.222 0.014 162);
-    --sidebar-foreground: oklch(0.962 0.004 155);
-    --sidebar-primary: oklch(0.702 0.062 168);
-    --sidebar-primary-foreground: oklch(0.178 0.018 166);
-    --sidebar-accent: oklch(0.288 0.022 165);
-    --sidebar-accent-foreground: oklch(0.928 0.018 165);
-    --sidebar-border: oklch(1 0 0 / 11%);
-    --sidebar-ring: oklch(0.702 0.062 168);
+  --background: oklch(0.178 0.012 162);
+  --foreground: oklch(0.962 0.004 155);
+  --card: oklch(0.222 0.014 162);
+  --card-foreground: oklch(0.962 0.004 155);
+  --popover: oklch(0.222 0.014 162);
+  --popover-foreground: oklch(0.962 0.004 155);
+  --primary: oklch(0.702 0.062 168);
+  --primary-foreground: oklch(0.178 0.018 166);
+  --secondary: oklch(0.268 0.014 162);
+  --secondary-foreground: oklch(0.962 0.004 155);
+  --muted: oklch(0.268 0.014 162);
+  --muted-foreground: oklch(0.712 0.014 158);
+  --accent: oklch(0.288 0.022 165);
+  --accent-foreground: oklch(0.928 0.018 165);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.702 0.062 168);
+  --chart-1: oklch(0.702 0.062 168);
+  --chart-2: oklch(0.628 0.052 174);
+  --chart-3: oklch(0.548 0.044 180);
+  --chart-4: oklch(0.462 0.036 186);
+  --chart-5: oklch(0.382 0.028 192);
+  --sidebar: oklch(0.222 0.014 162);
+  --sidebar-foreground: oklch(0.962 0.004 155);
+  --sidebar-primary: oklch(0.702 0.062 168);
+  --sidebar-primary-foreground: oklch(0.178 0.018 166);
+  --sidebar-accent: oklch(0.288 0.022 165);
+  --sidebar-accent-foreground: oklch(0.928 0.018 165);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: oklch(0.702 0.062 168);
 }
 
 @theme inline {
-    --font-sans: var(--font-sans);
-    /* One typeface. `font-heading` stays a valid class — pages already use it —
+  --font-sans: var(--font-sans);
+  /* One typeface. `font-heading` stays a valid class — pages already use it —
        but resolves to the sans; headings are differentiated by weight and
        tracking in @layer base below, not by a second family. */
-    --font-heading: var(--font-sans);
-    --font-mono: var(--font-mono);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
   /* What --font-heading used to do, done with weight and tracking instead. */
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-weight: 500;
     letter-spacing: -0.025em;
     text-wrap: pretty;
-    }
+  }
+}
+
+@layer utilities {
+  /* Landing atmosphere — index-card dot grid under a faint pine wash.
+     Both layers are mixed from theme tokens rather than hardcoded, so light and
+     dark stay coherent and a future accent change re-tints this for free. The
+     layer is fixed and viewport-masked: strongest behind the hero's whitespace,
+     dissolved before it can sit under dense tables. */
+  .landing-bg::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        ellipse 90% 55% at 50% -12%,
+        color-mix(in oklab, var(--primary) 9%, transparent),
+        transparent 68%
+      ),
+      radial-gradient(
+        color-mix(in oklab, var(--foreground) var(--dot-alpha, 9%), transparent) 1px,
+        transparent 1px
+      );
+    background-size:
+      auto,
+      26px 26px;
+    mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+  }
+
+  /* Ink on paper needs more presence than light on ink: the same alpha that
+     whispers on the light theme starts to shout on the dark one. */
+  .dark .landing-bg::before {
+    --dot-alpha: 6%;
+  }
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { desc, eq, sql } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import { builds, type BuildTarget } from "@/lib/db/schema";
 
@@ -15,6 +16,32 @@ import { builds, type BuildTarget } from "@/lib/db/schema";
 /** Newest first: a build is an event, and the last one is the one being watched. */
 export async function listBuilds() {
   return db.select().from(builds).orderBy(desc(builds.updatedAt));
+}
+
+/** The landing page renders one integer, not the rows — same reasoning as
+ *  `countProducts`. */
+export async function countBuilds(): Promise<number> {
+  const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(builds);
+  return row?.n ?? 0;
+}
+
+/**
+ * The one build the hero shows: a `proposed` run if any is waiting — that is the
+ * state that proves the gate — else the newest. Bounded and column-scoped, because
+ * `summary` is prose and `targets`/`details` are jsonb nobody renders in a card.
+ */
+export async function heroBuild() {
+  const [row] = await db
+    .select({
+      slug: builds.slug,
+      title: builds.title,
+      status: builds.status,
+      details: builds.details,
+    })
+    .from(builds)
+    .orderBy(sql`(${builds.status} = 'proposed') desc`, desc(builds.updatedAt))
+    .limit(1);
+  return row ?? null;
 }
 
 export const getBuild = cache(async (slug: string) => {

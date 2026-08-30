@@ -145,6 +145,10 @@ not a fallback.
 
 ## Writing
 
+\`save_build\` is the odd one out: it records what an agent DID rather than what
+was read — kind, status, targets, a markdown summary a person can review cold.
+Call it when work ends, success or not; re-saving a \`build\` slug updates in place.
+
 Field names are identical in and out: \`get_product\` returns \`llmsFullUrl\` and
 \`save_product\` takes \`llmsFullUrl\`. Read a record, edit one field, send it back
 — no mapping step.

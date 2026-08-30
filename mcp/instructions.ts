@@ -15,7 +15,7 @@ stored as structured records so you never read a documentation site to answer a
 question about one. Most products arrive as WeMakeDevs sponsors; a product does
 not need a hackathon to belong here.
 
-There are two jobs here. Work out which one you are doing.
+There are three jobs here. Work out which one you are doing.
 
 ## Building something (most of the time)
 
@@ -63,6 +63,15 @@ to TrueFoundry. Read guide://usage or call how_to_use for the query patterns.
 Pass URLs, never page content. This server fetches, parses, chunks, embeds and
 indexes. Handing it text you already downloaded burns the context this whole system
 exists to save, and skips the content hashing that makes re-runs nearly free.
+
+## Recording work (after building something)
+
+Everything above describes what this corpus has READ. save_build records what an
+agent DID with it — a library integrated, a scaffold, a failed attempt. Call it
+when the work ends, whichever way it went: a blocked run written down saves the
+next agent the hour it cost you. Name products by their list_products slugs so
+the record shows up on their pages. Re-saving the same \`build\` slug updates in
+place.
 
 ## Field names
 
