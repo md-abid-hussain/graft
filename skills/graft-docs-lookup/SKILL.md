@@ -63,7 +63,10 @@ Summarizing a setup procedure defeats the reason the documentation was indexed.
 
 ## Out of bounds
 
-- No web search, no fetching documentation pages, no memory of how the library behaves.
-  If it is not in the index, that is the finding.
+- Do not answer from a web search, from a documentation site, or from memory of how the
+  library behaves. This skill answers from the index; if the index does not cover
+  something, **that is the finding** — report the gap rather than papering over it.
+  Whether to go and look elsewhere is a decision for the job you are doing, not for the
+  lookup, and an agent with web tools still owes the reader that distinction.
 - No write tools. `save_hackathon`, `save_product` and `ingest_source` belong to
   research, not to answering a question.

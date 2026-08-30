@@ -141,6 +141,7 @@ const WRITE = [
   ["save_hackathon", "The hackathon record, when there is one: products reference it."],
   ["save_product", "A product, optionally linked to a hackathon."],
   ["ingest_source", "Fetch, chunk, embed and index a batch of doc URLs."],
+  ["save_build", "Record what an agent built, so it outlives the conversation."],
 ];
 
 const RESOURCES = [
@@ -181,7 +182,7 @@ export function McpSection() {
       <SectionHeading
         index="03"
         label="The MCP surface"
-        title="One server. Nine tools, two resources."
+        title="One server. Ten tools, two resources."
       >
         <p>
           The agents do not each carry their own copy of what has been learned. They read and
@@ -196,7 +197,7 @@ export function McpSection() {
       <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
         <ToolGroup label="Read" note="6 · pass straight through" items={READ} />
         <div>
-          <ToolGroup label="Write" note="3 · gated by the harness" items={WRITE} />
+          <ToolGroup label="Write" note="4 · gated by the harness" items={WRITE} />
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
             None of the three declare <code className="font-mono">readOnlyHint</code>, so the
             harness holds each one for a human.

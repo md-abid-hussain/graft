@@ -257,3 +257,32 @@ export const searchHit = z.object({
   score: z.number(),
   truncated: z.boolean(),
 });
+
+/**
+ * Build records.
+ *
+ * `status` is bounded and `kind` is not, for the same reason the table is: a reader has
+ * to be able to trust what `proposed` means, but nobody can enumerate in advance every
+ * kind of work an agent might be asked to do.
+ */
+export const buildStatus = z.enum(["in_progress", "proposed", "done", "blocked", "failed"]);
+
+export const buildTarget = z.object({
+  type: z.enum(["repository", "product", "url", "other"]),
+  name: z
+    .string()
+    .min(1)
+    .describe("The identifier a reader recognises — 'owner/repo', or a product slug"),
+  url: z.httpUrl().nullish(),
+  note: z.string().nullish().describe("What was done to this one, in a few words"),
+});
+
+export const buildSummary = z.object({
+  build: z.string(),
+  title: z.string(),
+  kind: z.string(),
+  status: buildStatus,
+  targets: z.array(buildTarget),
+  summary: z.string().nullable(),
+  updatedAt: isoDate,
+});

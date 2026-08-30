@@ -6,6 +6,7 @@ import { registerIngestSource } from "./ingest-source";
 import { registerListHackathons } from "./list-hackathons";
 import { registerListProducts } from "./list-products";
 import { registerSaveHackathon } from "./save-hackathon";
+import { registerSaveBuild } from "./save-build";
 import { registerSaveProduct } from "./save-product";
 import { registerSearchDocs } from "./search-docs";
 
@@ -34,4 +35,9 @@ export function registerTools(server: McpServer) {
   registerSaveHackathon(server);
   registerSaveProduct(server);
   registerIngestSource(server);
+
+  // Last, because it is the only write that records what an agent DID rather than
+  // what it read — a different job from the three above it, and reached at the end
+  // of a run rather than during one.
+  registerSaveBuild(server);
 }

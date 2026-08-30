@@ -35,10 +35,13 @@ export interface SessionSubject {
   hackathon: string | null;
   /** Slugs of any products it saved. */
   products: string[];
+  /** Slug of the build this session published, for a run that did work rather than research. */
+  build: string | null;
 }
 
 export async function subjectOf(sessionId: string): Promise<SessionSubject> {
   let hackathon: string | null = null;
+  let build: string | null = null;
   const products = new Set<string>();
   let pageToken: string | undefined;
 
@@ -65,11 +68,13 @@ export async function subjectOf(sessionId: string): Promise<SessionSubject> {
 
     pageToken = body.pagination?.next_page_token;
     // The hackathon is written before its products, so once it is found everything
-    // after it on the newest-first stream has already been seen.
-    if (!pageToken || hackathon) break;
+    // after it on the newest-first stream has already been seen. A build is written
+    // last, so on that same newest-first stream it is seen first — which is why one
+    // page is normally enough for a build run however long it ran.
+    if (!pageToken || hackathon || build) break;
   }
 
-  return { hackathon, products: [...products] };
+  return { hackathon, products: [...products], build };
 
   function scan(items: { event?: WireEvent }[]) {
     for (const item of items) {
@@ -94,6 +99,11 @@ export async function subjectOf(sessionId: string): Promise<SessionSubject> {
         }
         if (parsed.tool_name === "save_product" && typeof value.product === "string") {
           products.add(value.product);
+        }
+        if (parsed.tool_name === "save_build" && typeof value.build === "string") {
+          // A run may save the same slug twice — in progress, then final. Newest-first,
+          // so the first seen is the later one and wins.
+          build ??= value.build;
         }
       }
     }

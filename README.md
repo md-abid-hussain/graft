@@ -43,7 +43,7 @@ it — and the credential that can write to GitHub never enters the sandbox.
 | -------------- | --------------------------------------------------------------------------------------------- |
 | `graft-learn`  | Reads a hackathon and its sponsors, or a product on its own, asking before it stores anything |
 | `graft-recall` | Answers questions from the indexed documentation, with citations                              |
-| `graft-build`  | Adds a known library to a repository, sandboxed, pull request gated                           |
+| `graft-build`  | Does work with what the index knows — sandboxed, published as a record, writes gated          |
 
 Their specs live in [`trueforge/agents/`](trueforge/agents) — model, tool mounts and
 instructions as files, so a change to how an agent behaves arrives as a pull request
@@ -79,6 +79,8 @@ Then open:
 | `/hackathons` | What it knows — overview, rules, schedule, resources                                     |
 | `/research`   | Research a hackathon or a single product, with what it learned appearing beside the chat |
 | `/docs`       | Ask questions against the indexed documentation                                          |
+| `/build`      | Build with what it knows — a library into a repository, published as a record            |
+| `/builds`     | Every piece of work it has done, including the ones that did not work                    |
 
 It starts knowing nothing. The research agent fills it by calling `save_hackathon`,
 `save_product` and `ingest_source` — each one pausing for your approval. A product
@@ -88,7 +90,7 @@ same. The path a judge watches in the demo is the only path that writes.
 ## How the agents share a memory
 
 The agents do not each carry their own copy of what has been learned. They read and write
-one index through a single MCP server at `/api/mcp` — nine tools and two resources, with
+one index through a single MCP server at `/api/mcp` — ten tools and two resources, with
 reads and writes together because they are not two audiences. The research agent reads its
 own output constantly, to check whether a hackathon is already on record before spending
 an hour re-researching it.
@@ -110,6 +112,7 @@ an hour re-researching it.
 | `save_hackathon` | The hackathon record. Step 1: products reference it               |
 | `save_product`   | A sponsor product, optionally linked to a hackathon               |
 | `ingest_source`  | Fetch, chunk, embed and index a batch of doc URLs in one approval |
+| `save_build`     | Record a piece of work an agent did — the only tool that writes what it *did*, not what it read |
 
 **Resources** — the same guide the `how_to_use` tool returns, served the spec-correct way
 as well. Exposed twice on purpose: plenty of MCP clients read only `tools/list` and never
@@ -142,6 +145,14 @@ tools — Linkup, Bright Data, whatever is connected. It finds the hackathon pag
 sponsors, and each product's `llms-full.txt`; it sends facts and URLs. The server fetches,
 parses, chunks, embeds and stores. An agent that pastes page content here has already
 spent the context this whole system exists to save.
+
+**The index comes first, and the web is the fallback.** `graft-build` can search the web
+when the corpus cannot answer, because refusing to act on an unindexed library helps
+nobody. But the order is fixed and it says which it used: index first, then an explicit
+"this is not indexed", then the web, then a note on what to ingest so the next run is
+free. The failure worth guarding against is not a wrong answer — it is reaching for the
+web *first*, because that works, nobody notices, and the corpus quietly stops being the
+thing the project is built on.
 
 ## How TrueForge is used
 

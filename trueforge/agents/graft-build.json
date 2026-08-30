@@ -1,7 +1,9 @@
 {
   "model": {
     "name": "openai/gpt-5-6-luna",
-    "params": { "reasoning_effort": "xhigh" }
+    "params": {
+      "reasoning_effort": "xhigh"
+    }
   },
   "mcp_servers": [
     {
@@ -12,32 +14,74 @@
         "get_product",
         "list_hackathons",
         "get_hackathon",
-        "search_docs"
+        "search_docs",
+        "save_build"
       ],
       "disable_tools": [],
       "preload_tools": [],
-      "require_approval_for_tools": ["@write", "@destructive"],
+      "require_approval_for_tools": [
+        "@write",
+        "@destructive"
+      ],
       "preload": false
     },
     {
       "name": "github",
-      "enable_tools": ["@all"],
+      "enable_tools": [
+        "@all"
+      ],
       "disable_tools": [],
       "preload_tools": [],
-      "require_approval_for_tools": ["@write", "@destructive"],
+      "require_approval_for_tools": [
+        "@write",
+        "@destructive"
+      ],
+      "preload": false
+    },
+    {
+      "name": "linkup",
+      "enable_tools": [
+        "@all"
+      ],
+      "disable_tools": [],
+      "preload_tools": [],
+      "require_approval_for_tools": [
+        "@write",
+        "@destructive"
+      ],
       "preload": false
     }
   ],
-  "skills": [{ "name": "graft-library-integration" }, { "name": "graft-docs-lookup" }],
+  "skills": [
+    {
+      "name": "graft-library-integration"
+    },
+    {
+      "name": "graft-docs-lookup"
+    }
+  ],
   "config": {
     "iteration_limit": 100,
-    "sandbox": { "enabled": true, "file_downloads": true },
-    "dynamic_sub_agents": { "enabled": true },
-    "context_management": {
-      "compaction": { "enabled": true },
-      "large_tool_response": { "enabled": true }
+    "sandbox": {
+      "enabled": true,
+      "file_downloads": true
     },
-    "generative_ui": { "enabled": true },
-    "ask_user_questions": { "enabled": true }
+    "dynamic_sub_agents": {
+      "enabled": true
+    },
+    "context_management": {
+      "compaction": {
+        "enabled": true
+      },
+      "large_tool_response": {
+        "enabled": true
+      }
+    },
+    "generative_ui": {
+      "enabled": true
+    },
+    "ask_user_questions": {
+      "enabled": true
+    }
   }
 }

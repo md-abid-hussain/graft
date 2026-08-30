@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessagesSquare, Sprout, Telescope } from "lucide-react";
+import { Hammer, MessagesSquare, Sprout, Telescope } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 const BROWSE = [
   { href: "/hackathons", label: "Hackathons" },
   { href: "/products", label: "Products" },
+  { href: "/builds", label: "Builds" },
 ];
 
 const START = [
@@ -25,6 +26,13 @@ const START = [
     hint: "Give an agent a hackathon or a product and watch it learn the stack",
     Icon: Telescope,
     primary: true,
+  },
+  {
+    href: "/build",
+    label: "Build",
+    hint: "Point it at a repository and a library it knows, and let it do the work",
+    Icon: Hammer,
+    primary: false,
   },
   {
     href: "/docs",
