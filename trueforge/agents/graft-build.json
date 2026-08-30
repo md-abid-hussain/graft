@@ -5,7 +5,7 @@
   },
   "mcp_servers": [
     {
-      "name": "wehelpagents",
+      "name": "graft",
       "enable_tools": [
         "how_to_use",
         "list_products",
@@ -28,7 +28,7 @@
       "preload": false
     }
   ],
-  "skills": [],
+  "skills": [{ "name": "graft-library-integration" }, { "name": "graft-docs-lookup" }],
   "config": {
     "iteration_limit": 100,
     "sandbox": { "enabled": true, "file_downloads": true },

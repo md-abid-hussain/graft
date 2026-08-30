@@ -19,9 +19,18 @@ renaming a file means creating a new agent, not renaming the old one.
 
 ## What is not here
 
+**Skills.** `skills[].name` is a name-only reference to a skill configured under
+Settings → Skills. The skills themselves live in [../../skills](../../skills), and
+TrueForge clones them from GitHub at the ref their manifest names — so a skill edit is
+live only once it is pushed, and an agent that references one needs
+`config.sandbox.enabled: true`.
+
 **Connectors.** `mcp_servers[].name` refers to a connector configured under
 Settings → Connectors. Credentials live there and never in an agent spec, which is why
-these files are safe to commit.
+these files are safe to commit. `pnpm connectors:sync` registers the four these agents
+mount, reading the secrets from `.env` — the manifests are inside
+[../../scripts/sync-connectors.ts](../../scripts/sync-connectors.ts) rather than in a
+committed JSON, because a connector manifest carries its credential.
 
 ## Loading them
 
@@ -31,4 +40,7 @@ and `PUT /api/v1/agents/{agent_id}` needs the id — so an upsert has to list ag
 resolve the name to an id, and branch.
 
 OAuth connectors cannot be scripted end to end. `PUT` registers them but does not run
-DCR; `GET /api/v1/mcp-servers/{name}/authorize` returns a URL a human has to open.
+DCR; `GET /api/v1/mcp-servers/{name}/authorize` returns a URL a human has to open. None
+of the four these agents use is one — all four take a static header — so the whole set
+syncs without a browser. Bright Data also publishes an OAuth flow with DCR, which is
+the better answer for a shared deployment and the worse one for a script.
