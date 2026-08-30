@@ -19,18 +19,26 @@ export function registerSearchDocs(server: McpServer) {
         "`OTEL_EXPORTER_OTLP_ENDPOINT` and a question that shares no words with the " +
         "page that answers it.\n\n" +
         "Two things make it work much better:\n" +
-        "• Ask a whole question, not a keyword list. 'how do I stop the agent before " +
-        "it does something irreversible' beats 'approval gate' — the vector half " +
-        "needs something to match meaning against.\n" +
+        "• Ask a whole question, not a keyword list — the vector half needs " +
+        "something to match meaning against.\n" +
         "• One product per call. `product` is required and filtered before retrieval " +
         "runs, which is what stops a question about one tool returning another's " +
         "docs. Get the slug from list_products.\n\n" +
         "Every hit carries the URL it came from — cite it. Long passages are cut with " +
-        "a trailing ellipsis and `truncated: true`; fetch the URL if you need the rest.",
+        "a trailing ellipsis and `truncated: true`; fetch the URL if you need the rest.\n\n" +
+        "`score` is a rank-fusion figure, not a similarity. It tops out near 0.033, and " +
+        "a hit scoring 0.016 is regularly the right answer while one at 0.031 is not. " +
+        "Read the order and read the passages; do not threshold on the number.",
       inputSchema: z.object({
         query: z.string().min(1).describe("A question or phrase, not a keyword list"),
         product: slug.describe("Slug from list_products — required"),
-        limit: z.number().int().min(1).max(20).default(10),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(20)
+          .default(10)
+          .describe("How many passages to return. Default 10, max 20."),
       }),
       outputSchema: z.object({
         product: z.string(),

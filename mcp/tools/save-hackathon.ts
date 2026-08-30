@@ -11,8 +11,9 @@ export function registerSaveHackathon(server: McpServer) {
     {
       title: "Save a hackathon",
       description:
-        "Record a hackathon. Step 1 of a research run — products reference the " +
-        "hackathon, so it has to exist before save_product can link to it.\n\n" +
+        "Record a hackathon. Step 1 when you are researching one — products " +
+        "reference the hackathon, so it has to exist before save_product can link " +
+        "to it. Researching a product on its own skips this tool entirely.\n\n" +
         "Read the hackathon page with your own fetch or search tool, then send the " +
         "facts here. Send what the page actually says and leave a field out rather " +
         "than inferring it — a guessed deadline is worse than no deadline.\n\n" +

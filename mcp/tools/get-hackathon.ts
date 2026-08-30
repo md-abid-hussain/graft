@@ -19,7 +19,7 @@ export function registerGetHackathon(server: McpServer) {
         "Take the slug from list_hackathons rather than guessing it from the title — " +
         "they frequently differ.",
       inputSchema: z.object({
-        hackathon: slug.describe("Slug from list_hackathons, e.g. 'trueforge'"),
+        hackathon: slug.describe("Slug from list_hackathons, e.g. 'agents-of-signoz'"),
       }),
       outputSchema: s.hackathonRecord,
       annotations: READ,
@@ -31,8 +31,7 @@ export function registerGetHackathon(server: McpServer) {
         .where(eq(schema.hackathons.slug, hackathon))
         .limit(1);
 
-      if (!row)
-        return unknownSlug("hackathon", hackathon);
+      if (!row) return unknownSlug("hackathon", hackathon);
 
       const products = await db
         .select({
@@ -42,10 +41,7 @@ export function registerGetHackathon(server: McpServer) {
           notes: schema.hackathonProducts.notes,
         })
         .from(schema.hackathonProducts)
-        .innerJoin(
-          schema.products,
-          eq(schema.products.id, schema.hackathonProducts.productId),
-        )
+        .innerJoin(schema.products, eq(schema.products.id, schema.hackathonProducts.productId))
         .where(eq(schema.hackathonProducts.hackathonId, row.id))
         .orderBy(asc(schema.products.name));
 
