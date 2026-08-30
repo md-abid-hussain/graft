@@ -39,10 +39,16 @@ instead of repeating it.
 You review a diff that already passes. Nothing reaches your repository until you approve
 it — and the credential that can write to GitHub never enters the sandbox.
 
-None of this is hypothetical. `/builds` already holds two runs: an
-issue-triage pass over this repository's own tracker, closing issues that merged PRs had
-already addressed, and a Supermemory MCP integration — opened as a pull request and
-remediated against Qodo's review findings by the agent itself.
+None of this is hypothetical — the run worth watching is the one where **Graft used
+Graft to improve Graft**. Asked to give the agents cross-session memory, `graft-build`
+looked TrueForge's connector API up in its own index, wrote the Supermemory integration
+against this repository, and opened [PR #23](https://github.com/md-abid-hussain/graft/pull/23):
+a narrowly-scoped tool mount that deliberately leaves `graft-recall` untouched, so
+uncited memories can never enter the one agent whose contract is citations. Qodo raised
+a High-severity cross-space leakage finding; the agent remediated it in-thread with an
+exact-match space protocol and recorded the discussion link. One session, from its event
+log: 46 sandboxed executions, ten approval pauses, and three `save_build` calls updating
+one record in place — which is how `/builds` knows all of this.
 
 The knowledge is carried forward, not consumed. SigNoz stays observability and Cognee
 stays agent memory whichever event runs next, and a product that never sponsored
