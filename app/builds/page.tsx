@@ -32,8 +32,8 @@ export default async function BuildsPage() {
         <header className="max-w-2xl">
           <h1 className="font-heading text-3xl tracking-tight text-balance">Builds</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            What Graft has done with what it knows. Blocked and failed runs are kept too
-            — an attempt that did not work is worth more than no record of it.
+            What Graft has done with what it knows. Blocked and failed runs are kept too — an
+            attempt that did not work is worth more than no record of it.
           </p>
         </header>
 
@@ -43,8 +43,8 @@ export default async function BuildsPage() {
           </Empty>
         ) : items.length === 0 ? (
           <Empty>
-            Nothing built yet. Open <Code>Build</Code>, name a repository and a library
-            it already knows.
+            Nothing built yet. Open <Code>Build</Code>, name a repository and a library it
+            already knows.
           </Empty>
         ) : (
           <>

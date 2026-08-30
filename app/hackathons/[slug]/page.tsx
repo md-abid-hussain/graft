@@ -4,11 +4,7 @@ import { getHackathon, sectionsFor } from "@/lib/hackathons";
 
 export const dynamic = "force-dynamic";
 
-export default async function OverviewPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function OverviewPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const h = await getHackathon(slug);
   if (!h) notFound();

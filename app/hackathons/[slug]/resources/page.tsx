@@ -50,17 +50,26 @@ export default async function ResourcesPage({
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       {s.homepageUrl ? (
-                        <ResourceLink href={s.homepageUrl} icon={<Globe className="size-3.5" />}>
+                        <ResourceLink
+                          href={s.homepageUrl}
+                          icon={<Globe className="size-3.5" />}
+                        >
                           Homepage
                         </ResourceLink>
                       ) : null}
                       {s.docsUrl ? (
-                        <ResourceLink href={s.docsUrl} icon={<BookOpen className="size-3.5" />}>
+                        <ResourceLink
+                          href={s.docsUrl}
+                          icon={<BookOpen className="size-3.5" />}
+                        >
                           Docs
                         </ResourceLink>
                       ) : null}
                       {s.githubUrl ? (
-                        <ResourceLink href={s.githubUrl} icon={<FileText className="size-3.5" />}>
+                        <ResourceLink
+                          href={s.githubUrl}
+                          icon={<FileText className="size-3.5" />}
+                        >
                           GitHub
                         </ResourceLink>
                       ) : null}

@@ -20,10 +20,13 @@ export async function HeroEvidence() {
     // The landing page still reads without the index.
   }
 
-  // Only claim a validation that the record actually carries. A blocked run is a
-  // legitimate build record, and it never ran anything.
+  // "Validation on record" is a claim about the record, not about success — details is
+  // free-form, so its presence proves an entry exists, nothing more. Even that is only
+  // shown for runs that got far enough to have run anything: a failed or blocked run
+  // with a validation note is a note about what broke, not evidence of a green suite.
   const validated =
     latest != null &&
+    (latest.status === "proposed" || latest.status === "done") &&
     ["validation", "tests", "test"].some(
       (k) =>
         typeof latest?.details?.[k] === "string" && (latest.details[k] as string).length > 0,
@@ -92,7 +95,7 @@ export async function HeroEvidence() {
               {validated ? (
                 <span className="inline-flex items-center gap-1 font-mono text-[0.6875rem] text-muted-foreground">
                   <CircleCheck className="size-3" />
-                  validated in the sandbox
+                  validation on record
                 </span>
               ) : null}
             </p>
@@ -100,8 +103,13 @@ export async function HeroEvidence() {
         </EvidenceCard>
       ) : null}
 
+      {/* The caption only claims what rendered: without a row there is no live card,
+          and the row heroBuild picks is the one waiting on a human, not always the
+          newest — say so instead of saying "last". */}
       <p className="mt-4 text-center font-mono text-[0.6875rem] tracking-wide text-muted-foreground/70">
-        two worked examples — and, live from this instance, the last recorded run
+        {latest
+          ? "two worked examples — and, live from this instance's ledger, a recorded run"
+          : "two worked examples — gates and citations, as the agents produce them"}
       </p>
     </div>
   );

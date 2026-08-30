@@ -179,13 +179,7 @@ function toBlocks(lines: string[]): string[] {
 }
 
 export function chunkMarkdown(input: ChunkInput): Chunk[] {
-  const {
-    markdown,
-    docTitle,
-    productName,
-    targetTokens = 800,
-    overlapTokens = 100,
-  } = input;
+  const { markdown, docTitle, productName, targetTokens = 800, overlapTokens = 100 } = input;
 
   const chunks: Chunk[] = [];
   let ord = 0;
@@ -330,7 +324,11 @@ export function looksLikeLlmsFull(text: string): boolean {
 }
 
 const slugify = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
 
 /**
  * Fallback for llms-full files that concatenate documents without `Source:` lines —

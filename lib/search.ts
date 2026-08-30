@@ -88,7 +88,7 @@ type Row = {
   kind: SourceKind;
   content: string;
   score: string | number;
-}
+};
 
 export async function searchDocs({
   query,

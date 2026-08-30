@@ -49,8 +49,7 @@ export interface IngestResult {
 const sourceIdFor = (url: string) =>
   `src_${createHash("sha256").update(url).digest("hex").slice(0, 16)}`;
 
-const hashOf = (text: string) =>
-  `sha256:${createHash("sha256").update(text).digest("hex")}`;
+const hashOf = (text: string) => `sha256:${createHash("sha256").update(text).digest("hex")}`;
 
 /** Postgres caps parameters per statement; chunk rows are wide, so insert in slices. */
 const INSERT_BATCH = 200;
@@ -225,7 +224,13 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
       : // A single page carries its title in its own first heading. Falling back to
         // the URL made `docTitle` a URL on every chunk, so a batch of markdown pages
         // cited fifty identical-looking links instead of fifty page names.
-        [{ title: opts.title ?? titleFromMarkdown(text) ?? opts.url, url: opts.url, body: text }];
+        [
+          {
+            title: opts.title ?? titleFromMarkdown(text) ?? opts.url,
+            url: opts.url,
+            body: text,
+          },
+        ];
 
   const method: DiscoveryMethod =
     opts.discoveryMethod ?? (documents.length > 1 ? "llms-full" : "manual");
@@ -368,7 +373,9 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
  */
 function htmlReason(text: string): string | null {
   const head = text.slice(0, 2048).toLowerCase();
-  const isWholePage = /<!doctype\s+html|<html[\s>]|<head[\s>]|<body[\s>]|<\?xml[\s?]/.test(head);
+  const isWholePage = /<!doctype\s+html|<html[\s>]|<head[\s>]|<body[\s>]|<\?xml[\s?]/.test(
+    head,
+  );
   if (!isWholePage) return null;
 
   return (

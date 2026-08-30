@@ -30,8 +30,8 @@ export default async function ProductsPage() {
         <header className="max-w-2xl">
           <h1 className="font-heading text-3xl tracking-tight text-balance">Products</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Every tool Graft has read. Most arrived as a hackathon&apos;s sponsor; a
-            product does not need one to be here.
+            Every tool Graft has read. Most arrived as a hackathon&apos;s sponsor; a product
+            does not need one to be here.
           </p>
         </header>
 
@@ -41,8 +41,8 @@ export default async function ProductsPage() {
           </Empty>
         ) : items.length === 0 ? (
           <Empty>
-            Nothing learned yet. Open <Code>Research</Code> and give the agent a
-            hackathon URL, or ask it to record a product on its own.
+            Nothing learned yet. Open <Code>Research</Code> and give the agent a hackathon URL,
+            or ask it to record a product on its own.
           </Empty>
         ) : (
           <>

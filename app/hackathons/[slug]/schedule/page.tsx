@@ -33,11 +33,7 @@ function usableZone(tz: string | null): string | null {
 const when = (d: Date, tz: string | null) =>
   d.toLocaleString(undefined, tz ? { ...FORMAT, timeZone: tz } : FORMAT);
 
-export default async function SchedulePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function SchedulePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const h = await getHackathon(slug);
   if (!h) notFound();
@@ -63,9 +59,7 @@ export default async function SchedulePage({
               </span>
               <span>
                 <span className="block text-sm font-medium">{e.label}</span>
-                <span className="block text-sm text-muted-foreground">
-                  {when(e.at, zone)}
-                </span>
+                <span className="block text-sm text-muted-foreground">{when(e.at, zone)}</span>
               </span>
             </li>
           ))}

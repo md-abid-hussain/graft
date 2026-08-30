@@ -74,7 +74,11 @@ export const dbFailed = (what: string, error: unknown) => {
  * against these. A read tool missing `readOnlyHint` gets gated, and the agent stalls
  * waiting for a human to approve a SELECT.
  */
-export const READ = { readOnlyHint: true, idempotentHint: true, openWorldHint: false } as const;
+export const READ = {
+  readOnlyHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
 export const WRITE = {
   readOnlyHint: false,
   destructiveHint: false,

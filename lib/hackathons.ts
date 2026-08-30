@@ -61,9 +61,7 @@ export async function listHackathons() {
           socials: p.socials ?? {},
         })),
     }))
-    .sort(
-      (a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9),
-    );
+    .sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9));
 }
 
 export type HackathonCard = Awaited<ReturnType<typeof listHackathons>>[number];
@@ -77,15 +75,16 @@ export type HackathonCard = Awaited<ReturnType<typeof listHackathons>>[number];
  */
 export const getHackathon = cache(async (slug: string) => {
   const [row] =
-    (await db.select().from(hackathons).where(eq(hackathons.slug, slug)).limit(1)) ??
-    [];
+    (await db.select().from(hackathons).where(eq(hackathons.slug, slug)).limit(1)) ?? [];
   const resolved =
     row ??
-    (await db
-      .select()
-      .from(hackathons)
-      .where(eq(hackathons.id, `hk_${slug}`))
-      .limit(1))[0];
+    (
+      await db
+        .select()
+        .from(hackathons)
+        .where(eq(hackathons.id, `hk_${slug}`))
+        .limit(1)
+    )[0];
   if (!resolved) return null;
 
   const links = await db
@@ -97,14 +96,24 @@ export const getHackathon = cache(async (slug: string) => {
     ? await db
         .select()
         .from(products)
-        .where(inArray(products.id, links.map((l) => l.productId)))
+        .where(
+          inArray(
+            products.id,
+            links.map((l) => l.productId),
+          ),
+        )
     : [];
 
   const sourceRows = productRows.length
     ? await db
         .select()
         .from(sources)
-        .where(inArray(sources.productId, productRows.map((p) => p.id)))
+        .where(
+          inArray(
+            sources.productId,
+            productRows.map((p) => p.id),
+          ),
+        )
     : [];
 
   const notesByProduct = new Map(links.map((l) => [l.productId, l.notes]));

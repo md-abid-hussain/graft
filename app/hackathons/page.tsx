@@ -22,8 +22,8 @@ export default async function HackathonsPage() {
         <header className="max-w-2xl">
           <h1 className="font-heading text-3xl tracking-tight text-balance">Hackathons</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Every stack Graft has learned, kept from the hackathon where it met it —
-            and still here the next time you need one of them.
+            Every stack Graft has learned, kept from the hackathon where it met it — and still
+            here the next time you need one of them.
           </p>
         </header>
 
