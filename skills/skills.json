@@ -1,0 +1,26 @@
+[
+  {
+    "type": "git",
+    "name": "graft-docs-lookup",
+    "url": "https://github.com/md-abid-hussain/graft",
+    "path": "skills/graft-docs-lookup",
+    "ref": "main",
+    "description": "Answer questions about WeMakeDevs sponsor products and hackathons from the Graft index instead of documentation sites or memory. Covers slug discovery, how to phrase a search, per-product filtering, and citation. Use whenever a question touches an indexed product — its setup, configuration or API — or a hackathon's rules, tracks, dates or requirements."
+  },
+  {
+    "type": "git",
+    "name": "graft-research",
+    "url": "https://github.com/md-abid-hussain/graft",
+    "path": "skills/graft-research",
+    "ref": "main",
+    "description": "Research something into the Graft corpus and index its documentation: a hackathon with the sponsor products on it, or a single product on its own that no hackathon ever ran. Find the pages, store the record, get the selection approved, then ingest one call per product. Use when a hackathon or a product is not yet in Graft, or when a product on record still has no indexed documentation."
+  },
+  {
+    "type": "git",
+    "name": "graft-library-integration",
+    "url": "https://github.com/md-abid-hussain/graft",
+    "path": "skills/graft-library-integration",
+    "ref": "main",
+    "description": "Add a library to someone's repository and open a pull request they can review — read the target, learn the library from the Graft index rather than from memory, make the change in the sandbox, prove it with the project's own tests, then branch and open a PR. Use when asked to integrate, install, wire up or adopt a library in an existing codebase."
+  }
+]
