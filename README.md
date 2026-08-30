@@ -4,6 +4,10 @@
 
 ![GraftLandingPage](repo-asset/graft.png)
 
+#### Links
+
+- 📝 **Blog post** — [Graft: Your Agent Forgets Every Hackathon. Mine Stopped.](https://medium.com/@Abid_/graft-your-agent-forgets-every-hackathon-mine-stopped-fb496c861c3a)
+- 📺 **Demo video** — [Watch on YouTube](https://youtu.be/4omuZdGwX_E)
 Built for [The Agent Harness Hackathon](https://www.wemakedevs.org/hackathons/trueforge)
 (WeMakeDevs × TrueFoundry × Qodo) on [TrueForge](https://trueforge.dev).
 
