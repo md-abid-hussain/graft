@@ -7,6 +7,14 @@
   },
   "mcp_servers": [
     {
+      "name": "supermemory",
+      "enable_tools": ["search_memory", "add_memory", "listSpaces", "whoAmI"],
+      "disable_tools": [],
+      "preload_tools": [],
+      "require_approval_for_tools": ["@write", "@destructive"],
+      "preload": false
+    },
+    {
       "name": "graft",
       "enable_tools": [
         "how_to_use",
