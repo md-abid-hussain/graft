@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://api.app-prg1.zerops.io/api/rest/public/settings/import-project-yml-json-schema.json
+#
+# Graft, imported into the EXISTING TrueForge project.
+#
+# `service-import`, not `project-import` — landing in the same project is what makes
+# `TRUEFORGE_BASE_URL: http://app:8790` and `GRAFT_MCP_URL: http://graft:3000/api/mcp`
+# resolve privately:
+#
+#   zcli project service-import zerops-project-import.yml --projectId KiTyAGTfQXGOXAgOaW8tFg
+#
+# Both services below already exist in that project:
+#   graftdb  nBmCF2A8SKA6Ma2s1stYjw   (pgvector bootstrap already applied)
+#   graft    yw16SQGkRRSBfMFUTrS1ZQ   (empty — first build failed, not yet diagnosed)
+
+services:
+  # ---------------------------------------------------------------------------
+  # Postgres for the corpus and its embeddings.
+  #
+  # `graftdb` rather than `db` because the TrueForge import already took `db` and
+  # hostnames are unique per project. pg16 matches what the project develops against
+  # locally (pgvector/pgvector:pg16).
+  #
+  # The managed image DOES ship pgvector (v0.8.3, verified on the live service), but
+  # creating the extension needs superuser — see NOTES.md for the one-time step. It has
+  # already been run against this service.
+  # ---------------------------------------------------------------------------
+  - hostname: graftdb
+    type: postgresql:single@16
+    priority: 10
+
+  # ---------------------------------------------------------------------------
+  # The Next.js app: UI, the /api/mcp server, and the /api/tf proxy.
+  # ---------------------------------------------------------------------------
+  - hostname: graft
+    type: ubuntu/nodejs@24
+    priority: 1
+    startWithoutCode: true
+
+    # OFF until the auth work lands.
+    #
+    # `POST /api/mcp` has no authentication on `main` (issue #7) — proven, not assumed:
+    # an unauthenticated `tools/call` to `save_hackathon` reaches the handler and
+    # returns a schema error rather than a 401. `/api/search` is also unauthenticated
+    # and spends an OpenAI embedding per request. A public subdomain makes both
+    # reachable by anyone.
+    #
+    # TrueForge does not need it either — it reaches Graft privately at
+    # http://graft:3000/api/mcp. Turn it on deliberately, after the fix branch merges:
+    #   zcli service enable-subdomain --projectId <id> --serviceId <graft-id>
+    enableSubdomainAccess: false
+
+    minContainers: 1
+    maxContainers: 1
+
+    verticalAutoscaling:
+      minCpu: 1
+      maxCpu: 4
+      cpuMode: SHARED
+      minRam: 1
+      maxRam: 8
+      minDisk: 1
+      maxDisk: 10
+
+    # -------------------------------------------------------------------------
+    # Created empty; filled in the GUI under Service → Environment variables →
+    # Secret variables. Nothing sensitive is committed.
+    #
+    #   OPENAI_API_KEY     embeddings at ingestion AND on every /api/search — required
+    #   TRUEFORGE_TOKEN    bearer for connectors:sync / skills:sync against the
+    #                      Auth0-protected cloud harness — required
+    #   MCP_BEARER_TOKEN   gates POST /api/mcp once the fix branch lands. The app
+    #                      refuses to serve in production without it, so set it in the
+    #                      same change, then re-run connectors:sync
+    #   GITHUB_MCP_TOKEN   } connector credentials, read only by the sync scripts;
+    #   BRIGHTDATA_TOKEN   } a connector whose key is missing is skipped, not failed
+    #   LINKUP_API_KEY     }
+    # -------------------------------------------------------------------------
+    envSecrets:
+      OPENAI_API_KEY: ""
+      TRUEFORGE_TOKEN: ""
+      MCP_BEARER_TOKEN: ""
+      GITHUB_MCP_TOKEN: ""
+      BRIGHTDATA_TOKEN: ""
+      LINKUP_API_KEY: ""

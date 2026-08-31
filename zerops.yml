@@ -1,0 +1,149 @@
+# yaml-language-server: $schema=https://api.app-prg1.zerops.io/api/rest/public/settings/zerops-yml-json-schema.json
+#
+# Graft on Zerops — build & run pipeline for the `graft` service.
+#
+# Deployed into the SAME project as TrueForge so the two reach each other by private
+# hostname: TrueForge calls Graft's MCP route, Graft proxies TrueForge at /api/tf, and
+# neither hop should cross the public internet to do it.
+
+zerops:
+  - setup: graft
+
+    build:
+      base: ubuntu/nodejs@24
+
+      # No `prepareCommands: npm install -g pnpm` here, deliberately.
+      #
+      # That line was in an earlier version and is the likely cause of the first build
+      # failing after ~8 seconds — far too quick for a dependency install, and a global
+      # npm install is exactly the kind of thing that dies instantly when the build
+      # user cannot write to the global prefix. Reproduced locally: as a non-root user
+      # it fails in under a second.
+      #
+      # It was never needed. Zerops' own recipes (zeropsio/recipe-adonis) call `pnpm i`
+      # with no install step, so pnpm ships with the Node base.
+      #
+      # If a build ever fails here on lockfile version instead, the preinstalled pnpm
+      # is older than the lockfile (`lockfileVersion: 9.0` needs pnpm 9+); the fix is
+      # `corepack prepare pnpm@11 --activate`, not a global npm install.
+      buildCommands:
+        - pnpm install --frozen-lockfile
+        - pnpm build
+
+      # DATABASE_URL is needed AT BUILD TIME, not just at runtime.
+      #
+      # `lib/db/connection.ts` throws at MODULE scope when it is unset, and Next
+      # imports every route while collecting page data — so the build dies with
+      # "Failed to collect page data for /builds". Reproduced and confirmed locally:
+      # with this variable merely present the build passes, and every route compiles
+      # as `ƒ` (dynamic), so nothing actually queries the database while building.
+      # It does not need to point at a reachable server, but pointing it at the real
+      # one costs nothing and avoids a second confusing failure mode later.
+      #
+      # OPENAI_API_KEY is NOT needed here: embed.ts throws inside a function rather
+      # than at import, so it stays lazy. Verified by building without it.
+      envVariables:
+        DATABASE_URL: postgres://${graftdb_user}:${graftdb_password}@${graftdb_hostname}:${graftdb_port}/${graftdb_dbName}
+      # node_modules ships unpruned: `initCommands` runs drizzle-kit, a devDependency,
+      # so installing --prod here would break migrations on boot.
+      deployFiles:
+        # No `public` — the repo has no public/ directory, and Zerops fails the deploy
+        # on a deployFiles target that does not exist ("target 'public' ... is missing").
+        # Next treats public/ as optional; add it back here if one is ever committed.
+        - .next
+        - package.json
+        - pnpm-lock.yaml
+        - node_modules
+        - drizzle
+        - drizzle.config.ts
+        - scripts
+        - skills
+        - trueforge
+      # node_modules only.
+      #
+      # `.next/cache` was cached too, and restoring it recreated a `.next/` the build
+      # user could not write into -- `next build` then died with
+      # "EACCES: permission denied, open '/build/source/.next/trace'". Zerops restores
+      # cache in no-clobber mode, so the stale directory wins and the build cannot
+      # repair it. The incremental-build saving is not worth a build that fails on the
+      # second push and passes on the first.
+      cache:
+        - node_modules
+
+    deploy:
+      readinessCheck:
+        httpGet:
+          port: 3000
+          path: /
+
+    run:
+      base: ubuntu/nodejs@24
+
+      ports:
+        - port: 3000
+          httpSupport: true
+
+      # Drizzle migrations on every start; they are idempotent.
+      #
+      # REQUIRES the one-time pgvector bootstrap first — the first migration runs
+      # `CREATE EXTENSION vector`, and the `db` role cannot create extensions. Tested:
+      # it is "permission denied" on a fresh database and a clean no-op once a
+      # superuser has created it. See NOTES.md.
+      # drizzle-kit invoked directly rather than through `pnpm db:migrate`.
+      #
+      # pnpm runs a deps-status check before any script and, finding the runtime
+      # container's node_modules not to its liking, silently re-runs `install` --
+      # re-downloading ~900 packages into the runtime, then failing outright:
+      #
+      #   [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: sharp, unrs-resolver, ...
+      #   Command failed with exit code 1: ... pnpm.mjs install
+      #
+      # pnpm 11 requires explicit approval for postinstall scripts, so that install can
+      # never succeed unattended. Calling the binary skips the check entirely, and the
+      # deployed node_modules is already exactly what the build produced.
+      initCommands:
+        - ./node_modules/.bin/drizzle-kit migrate
+
+      envVariables:
+        NODE_ENV: production
+
+        # PORT is absent on purpose — Zerops reserves that key and supplies it from the
+        # `ports:` entry above. `next start` reads it; both land on 3000.
+
+        # Postgres. Zerops names the default database AND role `db` whatever the service
+        # hostname is, so this is ${graftdb_dbName} and NOT the hostname — an earlier
+        # version used the hostname and would have pointed at a database that does not
+        # exist. Verified against the live service.
+        DATABASE_URL: postgres://${graftdb_user}:${graftdb_password}@${graftdb_hostname}:${graftdb_port}/${graftdb_dbName}
+
+        EMBEDDING_MODEL: text-embedding-3-large
+        # 1536 rather than the native 3072: pgvector's HNSW index caps at 2000 dims.
+        # Confirmed working end to end on the managed service at this size.
+        EMBEDDING_DIMENSIONS: "1536"
+
+        # The harness by private hostname. `app` is the TrueForge service in the same
+        # project; 8790 is its container port, not the 8791 host mapping used locally.
+        TRUEFORGE_BASE_URL: http://app:8790
+
+        TRUEFORGE_AGENT: graft-learn
+        TRUEFORGE_DOC_AGENT: graft-recall
+        TRUEFORGE_BUILD_AGENT: graft-build
+
+        # Where TrueForge reaches this app's MCP route. Locally that is
+        # host.docker.internal:3100 because the harness runs in Docker beside a host dev
+        # server; here both are Zerops services, so it is a plain private hostname.
+        GRAFT_MCP_URL: http://graft:3000/api/mcp
+        GRAFT_MCP_NAME: graft
+
+      # Secrets are NOT here. OPENAI_API_KEY, TRUEFORGE_TOKEN, MCP_BEARER_TOKEN,
+      # GITHUB_MCP_TOKEN, BRIGHTDATA_TOKEN and LINKUP_API_KEY are created empty by the
+      # import YAML and filled in the GUI.
+
+      # Same reason as initCommands: `pnpm start` would trigger the same deps check
+      # and the same failed re-install. next is invoked directly.
+      start: ./node_modules/.bin/next start
+
+      healthCheck:
+        httpGet:
+          port: 3000
+          path: /
