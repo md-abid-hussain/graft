@@ -63,6 +63,25 @@ const graftUrl = process.env.GRAFT_MCP_URL ?? "http://host.docker.internal:3100/
  */
 const graftName = process.env.GRAFT_MCP_NAME ?? "graft";
 
+/**
+ * The bearer `POST /api/mcp` expects, when it expects one.
+ *
+ * Deliberately not in `requires`: an unset token has to leave this connector
+ * registered exactly as before, or syncing would break every local setup that was
+ * working fine without auth. Set MCP_BEARER_TOKEN on both sides and re-run this to
+ * turn it on; the server refuses anonymous callers only once it has a token to check
+ * against (and always in production).
+ */
+const graftAuth = process.env.MCP_BEARER_TOKEN
+  ? {
+      auth: {
+        type: "header",
+        // `Bearer ` is not optional — RFC 6750, and what `withMcpAuth` parses.
+        headers: { Authorization: `Bearer ${process.env.MCP_BEARER_TOKEN}` },
+      },
+    }
+  : {};
+
 const connectors: Record<string, Connector> = {
   [graftName]: {
     requires: [],
@@ -74,6 +93,7 @@ const connectors: Record<string, Connector> = {
         "Product documentation and hackathon corpus. Hybrid retrieval over indexed " +
         "documentation, plus the write path that records hackathons, products, " +
         "documentation sources and cited findings.",
+      ...graftAuth,
     }),
   },
 

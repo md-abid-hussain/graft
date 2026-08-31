@@ -12,6 +12,7 @@ import {
   type Chunk,
 } from "./chunk";
 import { embed } from "./embed";
+import { BlockedUrlError, safeFetch } from "./safe-fetch";
 
 /**
  * Fetch → hash → chunk → embed → store.
@@ -124,16 +125,23 @@ export async function ingestSource(opts: IngestOptions): Promise<IngestResult> {
   // corpus held no trace of it. An HTTP error a line below left a row; a dead host
   // left nothing, which is the same outcome for the operator and a different one for
   // the database.
+  // safeFetch rather than fetch: `opts.url` came from a model, so it is an untrusted
+  // address, and so is every redirect it leads to. See ./safe-fetch.ts.
   let res: Response;
   try {
-    res = await fetch(opts.url, {
+    ({ response: res } = await safeFetch(opts.url, {
       headers: { "user-agent": "Graft/0.1 (+https://github.com/md-abid-hussain/graft)" },
       signal: AbortSignal.timeout(60_000),
-    });
+    }));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await markFailed(sourceId, opts, `fetch failed: ${message}`);
-    throw new Error(`fetch failed for ${opts.url}: ${message}`);
+    // A refused address is a permanent property of the URL rather than a transient
+    // failure, so it is labelled as such — "blocked" tells the agent not to retry,
+    // where "fetch failed" invites exactly that.
+    const reason =
+      error instanceof BlockedUrlError ? `blocked: ${message}` : `fetch failed: ${message}`;
+    await markFailed(sourceId, opts, reason);
+    throw new Error(`${reason} for ${opts.url}`);
   }
 
   if (!res.ok) {
